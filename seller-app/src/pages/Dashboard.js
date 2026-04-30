@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { sellerAPI, ordersAPI } from '../api';
+import { useToast } from '../context/ToastContext';
 import './Dashboard.css';
 
 function Dashboard() {
@@ -10,6 +11,7 @@ function Dashboard() {
     profile: null,
   });
   const [loading, setLoading] = useState(true);
+  const { showError } = useToast();
 
   useEffect(() => {
     fetchDashboardData();
@@ -21,16 +23,18 @@ function Dashboard() {
       const itemsRes = await sellerAPI.getItems();
       const ordersRes = await ordersAPI.getSellerOrders();
 
-      const pendingOrders = ordersRes.data.filter(o => o.status === 'pending').length;
+      const sellerOrders = ordersRes.data.orders || [];
+      const pendingOrders = sellerOrders.filter(o => o.status === 'pending').length;
 
       setStats({
-        totalItems: itemsRes.data.length,
+        totalItems: itemsRes.data.length || 0,
         pendingOrders,
-        totalOrders: ordersRes.data.length,
+        totalOrders: sellerOrders.length || 0,
         profile: profileRes.data,
       });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      showError(error.response?.data?.message || 'Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
@@ -62,7 +66,7 @@ function Dashboard() {
       </div>
       
       <div className="card">
-        <h2>Welcome, {stats.profile?.businessName}!</h2>
+        <h2>Welcome, {stats.profile?.businessName || 'Seller'}!</h2>
         <p>Manage your store, items, and orders from this dashboard.</p>
       </div>
     </div>

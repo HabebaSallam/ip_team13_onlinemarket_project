@@ -155,3 +155,47 @@
 .table tr:hover {
   background-color: #f8f9fa;
 }
+
+.error-text {
+  color: #dc3545;
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+.required {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  font-size: inherit;
+}
+
+.link-btn:hover {
+  color: #0056b3;
+}
+
+.toast-container {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+input:invalid,
+textarea:invalid,
+select:invalid {
+  border-color: #dc3545;
+}
+

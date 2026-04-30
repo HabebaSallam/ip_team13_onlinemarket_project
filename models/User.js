@@ -17,10 +17,30 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    userType: {
+      type: String,
+      enum: ['buyer', 'seller'],
+      default: 'buyer',
+    },
     role: {
       type: String,
       enum: ['customer', 'seller'],
       default: 'customer',
+    },
+    phone: String,
+    address: String,
+    city: String,
+    state: String,
+    zipCode: String,
+    businessName: String,
+    serviceArea: String,
+    rating: {
+      type: Number,
+      default: 0,
+    },
+    flags: {
+      type: Number,
+      default: 0,
     },
     createdAt: {
       type: Date,

@@ -46,6 +46,29 @@ const orderSchema = new mongoose.Schema(
       enum: ['pending', 'completed', 'failed'],
       default: 'pending',
     },
+    comments: [
+      {
+        text: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+          required: true,
+        },
+        userType: {
+          type: String,
+          enum: ['buyer', 'seller'],
+          required: true,
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
   },
   { timestamps: true }
 );

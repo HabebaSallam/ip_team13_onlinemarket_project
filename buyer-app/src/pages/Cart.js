@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ordersAPI, api } from '../api';
+import { useToast } from '../context/ToastContext';
 import './Cart.css';
 
 function Cart({ cart, removeFromCart, updateQuantity }) {
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState(null);
   const navigate = useNavigate();
+  const { showError, showSuccess } = useToast();
 
   const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
@@ -19,40 +21,39 @@ function Cart({ cart, removeFromCart, updateQuantity }) {
       const res = await api.get('/buyers/profile');
       setProfile(res.data);
     } catch (err) {
-      console.error('Error fetching profile:', err);
+      showError(err.response?.data?.message || 'Failed to fetch profile');
     }
   };
 
   const handleCheckout = async () => {
     if (cart.length === 0) {
-      alert('Cart is empty');
+      showError('Cart is empty');
       return;
     }
 
     if (!profile) {
-      alert('Please complete your profile first');
-      navigate('/profile');
+      showError('Please complete your profile first');
+      setTimeout(() => navigate('/profile'), 1500);
+      return;
+    }
 
-          // Validate that all required address fields are filled
-          if (!profile.address || !profile.city || !profile.state || !profile.zipCode) {
-            alert('Please complete all address fields in your profile (Address, City, State, Zip Code)');
-            navigate('/profile');
-            return;
-          }
+    if (!profile.address || !profile.city || !profile.state || !profile.zipCode) {
+      showError('Please complete all address fields (Address, City, State, Zip Code)');
+      setTimeout(() => navigate('/profile'), 1500);
       return;
     }
 
     setLoading(true);
     try {
       const items = cart.map(item => ({
-        itemId: item._id,
+        product: item._id,
         quantity: item.quantity,
         price: item.price,
       }));
 
       const response = await ordersAPI.create({
         items,
-        deliveryAddress: {
+        shippingAddress: {
           street: profile.address,
           city: profile.city,
           state: profile.state,
@@ -61,11 +62,11 @@ function Cart({ cart, removeFromCart, updateQuantity }) {
         },
       });
 
-      alert('Order placed successfully!');
+      showSuccess('Order placed successfully!');
       localStorage.setItem('cart', JSON.stringify([]));
-      navigate(`/orders/${response.data.order._id}`);
+      setTimeout(() => navigate(`/orders/${response.data.order._id}`), 1500);
     } catch (err) {
-      alert('Error placing order: ' + err.message);
+      showError(err.response?.data?.error || err.response?.data?.message || 'Failed to place order');
     } finally {
       setLoading(false);
     }
@@ -96,17 +97,17 @@ function Cart({ cart, removeFromCart, updateQuantity }) {
               {cart.map(item => (
                 <tr key={item._id}>
                   <td>{item.name}</td>
-                  <td>${item.price}</td>
+                  <td>${Number(item.price || 0).toFixed(2)}</td>
                   <td>
                     <input 
                       type="number" 
                       min="1" 
                       value={item.quantity}
-                      onChange={(e) => updateQuantity(item._id, parseInt(e.target.value))}
+                      onChange={(e) => updateQuantity(item._id, parseInt(e.target.value) || 1)}
                       style={{ width: '50px' }}
                     />
                   </td>
-                  <td>${(item.price * item.quantity).toFixed(2)}</td>
+                  <td>${(Number(item.price || 0) * (item.quantity || 1)).toFixed(2)}</td>
                   <td>
                     <button 
                       className="btn-danger" 

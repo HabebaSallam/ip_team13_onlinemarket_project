@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
+import { useToast } from '../context/ToastContext';
 
 function Profile() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({});
+  const [formErrors, setFormErrors] = useState({});
+  const { showError, showSuccess } = useToast();
 
   useEffect(() => {
     fetchProfile();
@@ -17,7 +21,7 @@ function Profile() {
       setProfile(res.data);
       setFormData(res.data);
     } catch (err) {
-      console.error('Error fetching profile:', err);
+      showError(err.response?.data?.message || 'Error fetching profile');
     } finally {
       setLoading(false);
     }
@@ -26,16 +30,39 @@ function Profile() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (formErrors[name]) {
+      setFormErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.phone?.trim()) errors.phone = 'Phone number is required';
+    if (!formData.address?.trim()) errors.address = 'Address is required';
+    if (!formData.city?.trim()) errors.city = 'City is required';
+    if (!formData.state?.trim()) errors.state = 'State is required';
+    if (!formData.zipCode?.trim()) errors.zipCode = 'Zip code is required';
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) {
+      showError('Please fix the errors below');
+      return;
+    }
+
+    setSubmitting(true);
     try {
       await api.put('/buyers/profile', formData);
       setProfile(formData);
       setEditing(false);
+      showSuccess('Profile updated successfully!');
     } catch (err) {
-      console.error('Error updating profile:', err);
+      showError(err.response?.data?.message || 'Error updating profile');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -51,48 +78,86 @@ function Profile() {
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label>Full Name</label>
-              <input type="text" value={profile.name} disabled />
+              <input type="text" value={profile.name || ''} disabled />
             </div>
             
             <div className="form-group">
               <label>Email</label>
-              <input type="email" value={profile.email} disabled />
+              <input type="email" value={profile.email || ''} disabled />
             </div>
             
             <div className="form-group">
-              <label>Phone</label>
-              <input type="tel" name="phone" value={formData.phone} onChange={handleChange} />
+              <label>Phone <span className="required">*</span></label>
+              <input 
+                type="tel" 
+                name="phone" 
+                value={formData.phone || ''} 
+                onChange={handleChange}
+                placeholder="Phone number"
+              />
+              {formErrors.phone && <p className="error-text">{formErrors.phone}</p>}
             </div>
             
             <div className="form-group">
-              <label>Address</label>
-              <input type="text" name="address" value={formData.address} onChange={handleChange} />
+              <label>Address <span className="required">*</span></label>
+              <input 
+                type="text" 
+                name="address" 
+                value={formData.address || ''} 
+                onChange={handleChange}
+                placeholder="Street address"
+              />
+              {formErrors.address && <p className="error-text">{formErrors.address}</p>}
             </div>
             
             <div className="form-group">
-              <label>City</label>
-              <input type="text" name="city" value={formData.city} onChange={handleChange} />
+              <label>City <span className="required">*</span></label>
+              <input 
+                type="text" 
+                name="city" 
+                value={formData.city || ''} 
+                onChange={handleChange}
+                placeholder="City"
+              />
+              {formErrors.city && <p className="error-text">{formErrors.city}</p>}
             </div>
             
             <div className="form-group">
-              <label>State</label>
-              <input type="text" name="state" value={formData.state} onChange={handleChange} />
+              <label>State <span className="required">*</span></label>
+              <input 
+                type="text" 
+                name="state" 
+                value={formData.state || ''} 
+                onChange={handleChange}
+                placeholder="State"
+              />
+              {formErrors.state && <p className="error-text">{formErrors.state}</p>}
             </div>
             
             <div className="form-group">
-              <label>Zip Code</label>
-              <input type="text" name="zipCode" value={formData.zipCode} onChange={handleChange} />
+              <label>Zip Code <span className="required">*</span></label>
+              <input 
+                type="text" 
+                name="zipCode" 
+                value={formData.zipCode || ''} 
+                onChange={handleChange}
+                placeholder="Zip code"
+              />
+              {formErrors.zipCode && <p className="error-text">{formErrors.zipCode}</p>}
             </div>
             
-            <button type="submit" className="btn-primary">Save Changes</button>
+            <button type="submit" className="btn-primary" disabled={submitting}>
+              {submitting ? 'Saving...' : 'Save Changes'}
+            </button>
             <button type="button" className="btn-secondary" onClick={() => setEditing(false)}>Cancel</button>
           </form>
         ) : (
           <>
-            <p><strong>Name:</strong> {profile.name}</p>
-            <p><strong>Email:</strong> {profile.email}</p>
-            <p><strong>Phone:</strong> {profile.phone}</p>
-            <p><strong>Address:</strong> {profile.address}, {profile.city}, {profile.state}</p>
+            <p><strong>Name:</strong> {profile.name || 'N/A'}</p>
+            <p><strong>Email:</strong> {profile.email || 'N/A'}</p>
+            <p><strong>Phone:</strong> {profile.phone || 'Not set'}</p>
+            <p><strong>Address:</strong> {profile.address && profile.city && profile.state ? `${profile.address}, ${profile.city}, ${profile.state}` : 'Not set'}</p>
+            <p><strong>Zip Code:</strong> {profile.zipCode || 'Not set'}</p>
             
             <button className="btn-primary" onClick={() => setEditing(true)}>Edit Profile</button>
           </>

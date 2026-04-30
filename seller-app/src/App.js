@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
+import { ToastProvider } from './context/ToastContext';
 
 // Pages
 import Login from './pages/Login';
@@ -39,28 +40,30 @@ function App() {
   }
 
   return (
-    <Router>
-      {isAuthenticated && <Navbar onLogout={handleLogout} />}
-      <Routes>
-        {!isAuthenticated ? (
-          <>
-            <Route path="/login" element={<Login setIsAuthenticated={setIsAuthenticated} />} />
-            <Route path="/register" element={<Register setIsAuthenticated={setIsAuthenticated} />} />
-            <Route path="*" element={<Navigate to="/login" />} />
-          </>
-        ) : (
-          <>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/items" element={<Items />} />
-            <Route path="/items/:id" element={<ItemDetail />} />
-            <Route path="/orders" element={<Orders />} />
-            <Route path="/orders/:id" element={<OrderDetail />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="*" element={<Navigate to="/" />} />
-          </>
-        )}
-      </Routes>
-    </Router>
+    <ToastProvider>
+      <Router>
+        {isAuthenticated && <Navbar onLogout={handleLogout} />}
+        <Routes>
+          {!isAuthenticated ? (
+            <>
+              <Route path="/login" element={<Login setIsAuthenticated={setIsAuthenticated} />} />
+              <Route path="/register" element={<Register setIsAuthenticated={setIsAuthenticated} />} />
+              <Route path="*" element={<Navigate to="/login" />} />
+            </>
+          ) : (
+            <>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/items" element={<Items />} />
+              <Route path="/items/:id" element={<ItemDetail />} />
+              <Route path="/orders" element={<Orders />} />
+              <Route path="/orders/:id" element={<OrderDetail />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="*" element={<Navigate to="/" />} />
+            </>
+          )}
+        </Routes>
+      </Router>
+    </ToastProvider>
   );
 }
 

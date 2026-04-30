@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
+import { ToastProvider } from './context/ToastContext';
 
 // Pages
 import Login from './pages/Login';
@@ -68,28 +69,30 @@ function App() {
   }
 
   return (
-    <Router>
-      {isAuthenticated && <Navbar cartCount={cart.length} onLogout={handleLogout} />}
-      <Routes>
-        {!isAuthenticated ? (
-          <>
-            <Route path="/login" element={<Login setIsAuthenticated={setIsAuthenticated} />} />
-            <Route path="/register" element={<Register setIsAuthenticated={setIsAuthenticated} />} />
-            <Route path="*" element={<Navigate to="/login" />} />
-          </>
-        ) : (
-          <>
-            <Route path="/" element={<Catalog addToCart={addToCart} />} />
-            <Route path="/product/:id" element={<ProductDetail addToCart={addToCart} />} />
-            <Route path="/cart" element={<Cart cart={cart} removeFromCart={removeFromCart} updateQuantity={updateCartQuantity} />} />
-            <Route path="/orders" element={<MyOrders />} />
-            <Route path="/orders/:id" element={<OrderDetail />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="*" element={<Navigate to="/" />} />
-          </>
-        )}
-      </Routes>
-    </Router>
+    <ToastProvider>
+      <Router>
+        {isAuthenticated && <Navbar cartCount={cart.length} onLogout={handleLogout} />}
+        <Routes>
+          {!isAuthenticated ? (
+            <>
+              <Route path="/login" element={<Login setIsAuthenticated={setIsAuthenticated} />} />
+              <Route path="/register" element={<Register setIsAuthenticated={setIsAuthenticated} />} />
+              <Route path="*" element={<Navigate to="/login" />} />
+            </>
+          ) : (
+            <>
+              <Route path="/" element={<Catalog addToCart={addToCart} />} />
+              <Route path="/product/:id" element={<ProductDetail addToCart={addToCart} />} />
+              <Route path="/cart" element={<Cart cart={cart} removeFromCart={removeFromCart} updateQuantity={updateCartQuantity} />} />
+              <Route path="/orders" element={<MyOrders />} />
+              <Route path="/orders/:id" element={<OrderDetail />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="*" element={<Navigate to="/" />} />
+            </>
+          )}
+        </Routes>
+      </Router>
+    </ToastProvider>
   );
 }
 

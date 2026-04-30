@@ -17,20 +17,27 @@ const productSchema = new mongoose.Schema(
       min: 0,
     },
     category: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Category',
+      type: String,
       required: true,
     },
-    seller: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
-    inventory: {
+    stock: {
       type: Number,
       required: true,
       default: 0,
       min: 0,
+    },
+    deliveryTimeEstimate: {
+      type: Number,
+      default: 1,
+    },
+    images: {
+      type: Array,
+      default: [],
+    },
+    sellerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
     },
     rating: {
       type: Number,
@@ -41,10 +48,6 @@ const productSchema = new mongoose.Schema(
     reviews: {
       type: Number,
       default: 0,
-    },
-    image: {
-      type: String,
-      default: null,
     },
   },
   { timestamps: true }

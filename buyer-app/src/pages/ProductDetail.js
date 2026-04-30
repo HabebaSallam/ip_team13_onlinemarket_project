@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { itemsAPI, ratingsAPI, commentsAPI, flagsAPI } from '../api';
 import './ProductDetail.css';
@@ -11,15 +11,13 @@ function ProductDetail({ addToCart }) {
   const [summary, setSummary] = useState('');
   const [loading, setLoading] = useState(true);
   const [showRatingForm, setShowRatingForm] = useState(false);
+  const [showCommentForm, setShowCommentForm] = useState(false);
   const [showFlagForm, setShowFlagForm] = useState(false);
   const [ratingData, setRatingData] = useState({ rating: 5, review: '' });
+  const [commentText, setCommentText] = useState('');
   const [flagData, setFlagData] = useState({ reason: 'Delivery Delay', description: '' });
 
-  useEffect(() => {
-    fetchProductData();
-  }, [id]);
-
-  const fetchProductData = async () => {
+  const fetchProductData = useCallback(async () => {
     try {
       const [itemRes, ratingsRes, commentsRes, summaryRes] = await Promise.all([
         itemsAPI.getById(id),
@@ -27,6 +25,7 @@ function ProductDetail({ addToCart }) {
         commentsAPI.getByItem(id),
         commentsAPI.getSummary(id),
       ]);
+
       setItem(itemRes.data);
       setRatings(ratingsRes.data);
       setComments(commentsRes.data);
@@ -36,6 +35,29 @@ function ProductDetail({ addToCart }) {
     } finally {
       setLoading(false);
     }
+  }, [id]);
+
+  useEffect(() => {
+    fetchProductData();
+  }, [fetchProductData]);
+
+  const getSellerName = () => {
+    if (!item?.sellerId) return 'Unknown seller';
+    if (typeof item.sellerId === 'object') {
+      return item.sellerId.businessName || item.sellerId.name || 'Unknown seller';
+    }
+    return 'Unknown seller';
+  };
+
+  const getRatingText = () => {
+    if (item?.reviews !== undefined) {
+      const average = Number(item?.rating ?? 0);
+      const count = Number(item?.reviews ?? 0);
+      return `⭐ ${average.toFixed(1)} / 5 (${count} reviews)`;
+    }
+
+    const ratingValue = Number(item?.rating ?? 0);
+    return `⭐ ${ratingValue.toFixed(1)} / 5 (0 reviews)`;
   };
 
   const handleSubmitRating = async (e) => {
@@ -43,13 +65,31 @@ function ProductDetail({ addToCart }) {
     try {
       await ratingsAPI.create({
         itemId: id,
-        ...ratingData,
+        rating: ratingData.rating,
+        review: ratingData.review,
       });
       setRatingData({ rating: 5, review: '' });
       setShowRatingForm(false);
-      fetchProductData();
+      await fetchProductData();
     } catch (err) {
       console.error('Error submitting rating:', err);
+      alert(err.response?.data?.error || 'Unable to submit review');
+    }
+  };
+
+  const handleSubmitComment = async (e) => {
+    e.preventDefault();
+    try {
+      await commentsAPI.create({
+        productId: id,
+        text: commentText,
+      });
+      setCommentText('');
+      setShowCommentForm(false);
+      await fetchProductData();
+    } catch (err) {
+      console.error('Error submitting comment:', err);
+      alert(err.response?.data?.error || 'Unable to submit comment');
     }
   };
 
@@ -57,7 +97,7 @@ function ProductDetail({ addToCart }) {
     e.preventDefault();
     try {
       await flagsAPI.create({
-        flaggedUserId: item.sellerId._id,
+        flaggedUserId: item?.sellerId?._id,
         ...flagData,
       });
       setFlagData({ reason: 'Delivery Delay', description: '' });
@@ -65,6 +105,7 @@ function ProductDetail({ addToCart }) {
       alert('Seller flagged successfully');
     } catch (err) {
       console.error('Error flagging seller:', err);
+      alert(err.response?.data?.error || 'Unable to flag seller');
     }
   };
 
@@ -82,41 +123,38 @@ function ProductDetail({ addToCart }) {
         
         <div className="product-details-section">
           <h2>{item.name}</h2>
-          <p className="seller-name">Sold by: <strong>{item.sellerId.businessName}</strong></p>
-          <p className="price">${item.price.toFixed(2)}</p>
-          <p className="rating">⭐ {item.rating.average.toFixed(1)} / 5 ({item.rating.count} reviews)</p>
+          <p className="seller-name">Sold by: <strong>{getSellerName()}</strong></p>
+          <p className="price">${Number(item.price || 0).toFixed(2)}</p>
+          <p className="rating">{getRatingText()}</p>
           <p className="description">{item.description}</p>
           <p className="delivery">Delivery Time: {item.deliveryTimeEstimate} days</p>
           <p className="stock">Stock Available: {item.stock}</p>
           
           <div className="actions">
             <button className="btn-primary btn-large" onClick={() => addToCart(item)}>Add to Cart</button>
-            <button className="btn-danger" onClick={() => setShowFlagForm(true)}>Flag Seller</button>
+            <button className="btn-secondary" onClick={() => setShowRatingForm(!showRatingForm)}>
+              {showRatingForm ? 'Hide Review Form' : 'Add Review'}
+            </button>
+            <button className="btn-secondary" onClick={() => setShowCommentForm(!showCommentForm)}>
+              {showCommentForm ? 'Hide Comment Form' : 'Add Comment'}
+            </button>
+            <button className="btn-danger" onClick={() => setShowFlagForm(!showFlagForm)}>Flag Seller</button>
           </div>
         </div>
       </div>
       
-      {/* Comments Summary Section */}
       <div className="card">
-        <h3>📊 Customer Reviews Summary</h3>
-        <p className="summary">{summary}</p>
+        <h3>Product feedback</h3>
+        <p>{summary}</p>
       </div>
-      
-      {/* Ratings Section */}
-      <div className="card">
-        <h3>Reviews ({ratings.length})</h3>
-        <button className="btn-primary" onClick={() => setShowRatingForm(!showRatingForm)}>
-          {showRatingForm ? 'Cancel' : 'Add Review'}
-        </button>
-        
-        {showRatingForm && (
+
+      {showRatingForm && (
+        <div className="card">
+          <h3>Add Review</h3>
           <form onSubmit={handleSubmitRating} className="rating-form">
             <div className="form-group">
               <label>Rating</label>
-              <select 
-                value={ratingData.rating} 
-                onChange={(e) => setRatingData({...ratingData, rating: parseInt(e.target.value)})}
-              >
+              <select value={ratingData.rating} onChange={(e) => setRatingData({ ...ratingData, rating: parseInt(e.target.value, 10) })}>
                 <option value="1">1 - Poor</option>
                 <option value="2">2 - Fair</option>
                 <option value="3">3 - Good</option>
@@ -124,43 +162,45 @@ function ProductDetail({ addToCart }) {
                 <option value="5">5 - Excellent</option>
               </select>
             </div>
-            
             <div className="form-group">
               <label>Review</label>
-              <textarea 
+              <textarea
                 value={ratingData.review}
-                onChange={(e) => setRatingData({...ratingData, review: e.target.value})}
+                onChange={(e) => setRatingData({ ...ratingData, review: e.target.value })}
                 placeholder="Share your thoughts about this product..."
-              ></textarea>
+              />
             </div>
-            
             <button type="submit" className="btn-primary">Submit Review</button>
           </form>
-        )}
-        
-        <div className="ratings-list">
-          {ratings.map(rating => (
-            <div key={rating._id} className="rating-item">
-              <div className="rating-header">
-                <strong>{rating.buyerId.name}</strong>
-                <span className="rating-stars">⭐ {rating.rating}/5</span>
-              </div>
-              <p>{rating.review}</p>
-            </div>
-          ))}
         </div>
-      </div>
-      
-      {/* Flag Seller Form */}
+      )}
+
+      {showCommentForm && (
+        <div className="card">
+          <h3>Add Comment</h3>
+          <form onSubmit={handleSubmitComment}>
+            <div className="form-group">
+              <label>Comment</label>
+              <textarea
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder="Ask the seller or leave feedback..."
+              />
+            </div>
+            <button type="submit" className="btn-primary">Submit Comment</button>
+          </form>
+        </div>
+      )}
+
       {showFlagForm && (
         <div className="card">
-          <h3>Report Issue with Seller</h3>
+          <h3>Flag Seller</h3>
           <form onSubmit={handleSubmitFlag}>
             <div className="form-group">
-              <label>Issue Type</label>
-              <select 
+              <label>Reason</label>
+              <select
                 value={flagData.reason}
-                onChange={(e) => setFlagData({...flagData, reason: e.target.value})}
+                onChange={(e) => setFlagData({ ...flagData, reason: e.target.value })}
               >
                 <option value="Delivery Delay">Delivery Delay</option>
                 <option value="Item Not Received">Item Not Received</option>
@@ -169,21 +209,48 @@ function ProductDetail({ addToCart }) {
                 <option value="Other">Other</option>
               </select>
             </div>
-            
             <div className="form-group">
               <label>Description</label>
-              <textarea 
+              <textarea
                 value={flagData.description}
-                onChange={(e) => setFlagData({...flagData, description: e.target.value})}
+                onChange={(e) => setFlagData({ ...flagData, description: e.target.value })}
                 placeholder="Describe the issue in detail..."
-              ></textarea>
+              />
             </div>
-            
             <button type="submit" className="btn-danger">Submit Report</button>
-            <button type="button" className="btn-secondary" onClick={() => setShowFlagForm(false)}>Cancel</button>
           </form>
         </div>
       )}
+
+      <div className="card">
+        <h3>Reviews ({ratings.length})</h3>
+        <div className="ratings-list">
+          {ratings.map((rating) => (
+            <div key={rating._id} className="rating-item">
+              <div className="rating-header">
+                <strong>{rating.user?.name || 'Buyer'}</strong>
+                <span className="rating-stars">⭐ {rating.rating}/5</span>
+              </div>
+              <p>{rating.comment}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="card">
+        <h3>Comments ({comments.length})</h3>
+        <div className="ratings-list">
+          {comments.map((comment) => (
+            <div key={comment._id} className="rating-item">
+              <div className="rating-header">
+                <strong>{comment.user?.name || 'Buyer'}</strong>
+                <span>{new Date(comment.createdAt).toLocaleDateString()}</span>
+              </div>
+              <p>{comment.text}</p>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

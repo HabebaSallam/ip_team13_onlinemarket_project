@@ -12,7 +12,7 @@ const generateToken = (id) => {
 // @route   POST /api/auth/register
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, userType, businessName } = req.body;
 
     // Validation
     if (!name || !email || !password) {
@@ -30,7 +30,8 @@ exports.register = async (req, res) => {
       name,
       email,
       password,
-      role: role || 'customer',
+      userType: userType || 'buyer',
+      businessName: businessName || null,
     });
 
     // Generate token
@@ -43,7 +44,8 @@ exports.register = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role,
+        userType: user.userType,
+        businessName: user.businessName,
       },
     });
   } catch (error) {
@@ -84,7 +86,8 @@ exports.login = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role,
+        userType: user.userType,
+        businessName: user.businessName,
       },
     });
   } catch (error) {
