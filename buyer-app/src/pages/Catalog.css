@@ -1,0 +1,39 @@
+.filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.search-input {
+  flex: 1;
+  min-width: 200px;
+}
+
+.filters select,
+.filters input {
+  flex: 0 1 auto;
+  min-width: 150px;
+}
+
+.product-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.product-actions button {
+  flex: 1;
+  padding: 8px;
+  font-size: 12px;
+}
+
+.product-delivery {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 10px;
+}

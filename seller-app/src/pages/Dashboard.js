@@ -1,0 +1,72 @@
+import React, { useState, useEffect } from 'react';
+import { sellerAPI, ordersAPI } from '../api';
+import './Dashboard.css';
+
+function Dashboard() {
+  const [stats, setStats] = useState({
+    totalItems: 0,
+    pendingOrders: 0,
+    totalOrders: 0,
+    profile: null,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const profileRes = await sellerAPI.getProfile();
+      const itemsRes = await sellerAPI.getItems();
+      const ordersRes = await ordersAPI.getSellerOrders();
+
+      const pendingOrders = ordersRes.data.filter(o => o.status === 'pending').length;
+
+      setStats({
+        totalItems: itemsRes.data.length,
+        pendingOrders,
+        totalOrders: ordersRes.data.length,
+        profile: profileRes.data,
+      });
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) return <div className="loading">Loading...</div>;
+
+  return (
+    <div className="container">
+      <div className="page-title">Seller Dashboard</div>
+      
+      <div className="stats-grid">
+        <div className="stat-card">
+          <h3>{stats.totalItems}</h3>
+          <p>Total Items Listed</p>
+        </div>
+        <div className="stat-card">
+          <h3>{stats.totalOrders}</h3>
+          <p>Total Orders</p>
+        </div>
+        <div className="stat-card">
+          <h3>{stats.pendingOrders}</h3>
+          <p>Pending Orders</p>
+        </div>
+        <div className="stat-card">
+          <h3>{stats.profile?.flags || 0}</h3>
+          <p>Flags Against You</p>
+        </div>
+      </div>
+      
+      <div className="card">
+        <h2>Welcome, {stats.profile?.businessName}!</h2>
+        <p>Manage your store, items, and orders from this dashboard.</p>
+      </div>
+    </div>
+  );
+}
+
+export default Dashboard;
