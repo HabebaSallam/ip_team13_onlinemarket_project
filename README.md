@@ -55,7 +55,24 @@ The server will run on `http://localhost:5000`
 
 ## Available API Endpoints
 
-- `GET /api/health` - Check if backend is running
+### Authentication
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Login user
+- `GET /api/auth/me` - Get current user (protected)
+
+### Products
+- `GET /api/products` - Get all products (with filtering & search)
+- `GET /api/products/:id` - Get single product
+- `POST /api/products` - Create product (protected, sellers only)
+- `PUT /api/products/:id` - Update product (protected, seller/admin only)
+- `DELETE /api/products/:id` - Delete product (protected, seller/admin only)
+
+### Orders
+- `POST /api/orders` - Create order (protected)
+- `GET /api/orders` - Get user's orders (protected)
+- `GET /api/orders/:id` - Get single order (protected)
+- `PUT /api/orders/:id` - Update order status (protected, admin only)
+- `DELETE /api/orders/:id` - Cancel order (protected)
 
 ## Next Steps
 
