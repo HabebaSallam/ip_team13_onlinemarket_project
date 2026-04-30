@@ -55,7 +55,56 @@ The server will run on `http://localhost:5000`
 
 ## Available API Endpoints
 
-- `GET /api/health` - Check if backend is running
+### Authentication
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Login user
+- `GET /api/auth/me` - Get current user (protected)
+
+### Categories
+- `GET /api/categories` - Get all categories
+- `GET /api/categories/:id` - Get single category
+- `POST /api/categories` - Create category (protected)
+- `PUT /api/categories/:id` - Update category (protected)
+- `DELETE /api/categories/:id` - Delete category (protected)
+
+### Products
+- `GET /api/products` - Get all products (with filtering & search)
+- `GET /api/products/:id` - Get single product
+- `POST /api/products` - Create product (protected, sellers only)
+- `PUT /api/products/:id` - Update product (protected, seller only)
+- `DELETE /api/products/:id` - Delete product (protected, seller only)
+
+### Reviews
+- `GET /api/products/:id/reviews` - Get product reviews
+- `POST /api/products/:id/reviews` - Create review (protected)
+- `DELETE /api/reviews/:id` - Delete review (protected, review author only)
+
+### Cart
+- `GET /api/cart` - Get user's cart (protected)
+- `POST /api/cart/add` - Add item to cart (protected)
+- `POST /api/cart/remove` - Remove item from cart (protected)
+- `POST /api/cart/update` - Update cart item quantity (protected)
+- `DELETE /api/cart/clear` - Clear cart (protected)
+
+### Orders
+- `POST /api/orders` - Create order (protected)
+- `GET /api/orders` - Get user's orders (protected)
+- `GET /api/orders/:id` - Get single order (protected)
+- `PUT /api/orders/:id` - Update order status (protected)
+- `DELETE /api/orders/:id` - Cancel order (protected)
+
+## Features
+
+- ✅ User authentication with JWT
+- ✅ Role-based access control (customer, seller)
+- ✅ Product management (CRUD)
+- ✅ Product categories
+- ✅ Shopping cart functionality
+- ✅ Order management
+- ✅ Product reviews with ratings
+- ✅ Input validation
+- ✅ Error handling middleware
+- ✅ MongoDB integration
 
 ## Next Steps
 
