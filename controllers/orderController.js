@@ -81,8 +81,8 @@ exports.getOrder = async (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    // Check if user owns order or is admin
-    if (order.user._id.toString() !== req.user.id && req.user.role !== 'admin') {
+    // Check if user owns order
+    if (order.user._id.toString() !== req.user.id) {
       return res.status(403).json({ error: 'Not authorized to view this order' });
     }
 
@@ -136,8 +136,8 @@ exports.cancelOrder = async (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    // Check if user owns order or is admin
-    if (order.user.toString() !== req.user.id && req.user.role !== 'admin') {
+    // Check if user owns order
+    if (order.user.toString() !== req.user.id) {
       return res.status(403).json({ error: 'Not authorized to cancel this order' });
     }
 

@@ -104,8 +104,8 @@ exports.updateProduct = async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    // Check if user is seller or admin
-    if (product.seller.toString() !== req.user.id && req.user.role !== 'admin') {
+    // Check if user is the seller
+    if (product.seller.toString() !== req.user.id) {
       return res.status(403).json({ error: 'Not authorized to update this product' });
     }
 
@@ -133,8 +133,8 @@ exports.deleteProduct = async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    // Check if user is seller or admin
-    if (product.seller.toString() !== req.user.id && req.user.role !== 'admin') {
+    // Check if user is the seller
+    if (product.seller.toString() !== req.user.id) {
       return res.status(403).json({ error: 'Not authorized to delete this product' });
     }
 

@@ -64,14 +64,14 @@ The server will run on `http://localhost:5000`
 - `GET /api/products` - Get all products (with filtering & search)
 - `GET /api/products/:id` - Get single product
 - `POST /api/products` - Create product (protected, sellers only)
-- `PUT /api/products/:id` - Update product (protected, seller/admin only)
-- `DELETE /api/products/:id` - Delete product (protected, seller/admin only)
+- `PUT /api/products/:id` - Update product (protected, seller only)
+- `DELETE /api/products/:id` - Delete product (protected, seller only)
 
 ### Orders
 - `POST /api/orders` - Create order (protected)
 - `GET /api/orders` - Get user's orders (protected)
 - `GET /api/orders/:id` - Get single order (protected)
-- `PUT /api/orders/:id` - Update order status (protected, admin only)
+- `PUT /api/orders/:id` - Update order status (protected)
 - `DELETE /api/orders/:id` - Cancel order (protected)
 
 ## Next Steps
