@@ -7,11 +7,13 @@ import { ToastProvider } from './context/ToastContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Catalog from './pages/Catalog';
+import CategoryPage from './pages/CategoryPage';
 import ProductDetail from './pages/ProductDetail';
 import MyOrders from './pages/MyOrders';
 import OrderDetail from './pages/OrderDetail';
 import Profile from './pages/Profile';
 import Cart from './pages/Cart';
+import Checkout from './pages/Checkout';
 
 // Components
 import Navbar from './components/Navbar';
@@ -82,10 +84,12 @@ function App() {
           ) : (
             <>
               <Route path="/" element={<Catalog addToCart={addToCart} />} />
+              <Route path="/category/:categoryName" element={<CategoryPage addToCart={addToCart} />} />
               <Route path="/product/:id" element={<ProductDetail addToCart={addToCart} />} />
               <Route path="/cart" element={<Cart cart={cart} removeFromCart={removeFromCart} updateQuantity={updateCartQuantity} />} />
               <Route path="/orders" element={<MyOrders />} />
               <Route path="/orders/:id" element={<OrderDetail />} />
+              <Route path="/checkout/:id" element={<Checkout />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="*" element={<Navigate to="/" />} />
             </>

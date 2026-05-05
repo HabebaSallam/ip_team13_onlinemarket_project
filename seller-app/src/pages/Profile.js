@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { sellerAPI } from '../api';
 import { useToast } from '../context/ToastContext';
 
@@ -11,11 +11,7 @@ function Profile() {
   const [formErrors, setFormErrors] = useState({});
   const { showError, showSuccess } = useToast();
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       const res = await sellerAPI.getProfile();
       setProfile(res.data);
@@ -25,7 +21,11 @@ function Profile() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showError]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -56,7 +56,7 @@ function Profile() {
     setSubmitting(true);
     try {
       await sellerAPI.updateProfile(formData);
-      setProfile(formData);
+      setProfile(prev => ({ ...prev, ...formData }));
       setEditing(false);
       showSuccess('Profile updated successfully!');
     } catch (err) {
@@ -159,8 +159,8 @@ function Profile() {
             <p><strong>Business:</strong> {profile.businessName || 'Not set'}</p>
             <p><strong>Phone:</strong> {profile.phone || 'Not set'}</p>
             <p><strong>Address:</strong> {profile.address && profile.city && profile.state ? `${profile.address}, ${profile.city}, ${profile.state}` : 'Not set'}</p>
-            <p><strong>Rating:</strong> {Number(profile.rating || 0).toFixed(1)} / 5</p>
-            <p><strong>Flags:</strong> {profile.flags || 0}</p>
+            
+            <p><strong>Flags Against You:</strong> {profile.sellerFlags || 0}</p>
             
             <button className="btn-primary" onClick={() => setEditing(true)}>Edit Profile</button>
           </>

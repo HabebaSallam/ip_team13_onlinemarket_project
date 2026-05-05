@@ -35,6 +35,11 @@ export const ordersAPI = {
   addComment: (id, text) => api.post(`/orders/${id}/comments`, { text }),
 };
 
+// Payments endpoints (mock)
+export const paymentsAPI = {
+  pay: (data) => api.post('/payments/pay', data),
+};
+
 // Ratings endpoints
 export const ratingsAPI = {
   create: (data) => api.post('/ratings', data),
@@ -48,9 +53,10 @@ export const commentsAPI = {
   getSummary: (itemId) => api.get(`/comments/item/${itemId}/summary`),
 };
 
-// Flags endpoint
+// Flags endpoints
 export const flagsAPI = {
   create: (data) => api.post('/flags', data),
+  getMyFlags: () => api.get('/flags/my-flags'),
 };
 
 // Buyers endpoints

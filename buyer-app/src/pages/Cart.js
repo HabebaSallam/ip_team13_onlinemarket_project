@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ordersAPI, api } from '../api';
 import { useToast } from '../context/ToastContext';
@@ -12,18 +12,18 @@ function Cart({ cart, removeFromCart, updateQuantity }) {
 
   const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       const res = await api.get('/buyers/profile');
       setProfile(res.data);
     } catch (err) {
       showError(err.response?.data?.message || 'Failed to fetch profile');
     }
-  };
+  }, [showError]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
   const handleCheckout = async () => {
     if (cart.length === 0) {
@@ -51,6 +51,7 @@ function Cart({ cart, removeFromCart, updateQuantity }) {
         price: item.price,
       }));
 
+      // Create order with paymentStatus pending and then navigate to checkout
       const response = await ordersAPI.create({
         items,
         shippingAddress: {
@@ -62,9 +63,10 @@ function Cart({ cart, removeFromCart, updateQuantity }) {
         },
       });
 
-      showSuccess('Order placed successfully!');
+      const createdOrder = response.data.order || response.data;
       localStorage.setItem('cart', JSON.stringify([]));
-      setTimeout(() => navigate(`/orders/${response.data.order._id}`), 1500);
+      showSuccess('Order created. Proceed to payment.');
+      setTimeout(() => navigate(`/checkout/${createdOrder._id}`), 800);
     } catch (err) {
       showError(err.response?.data?.error || err.response?.data?.message || 'Failed to place order');
     } finally {

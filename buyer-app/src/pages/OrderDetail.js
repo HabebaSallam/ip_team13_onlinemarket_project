@@ -53,10 +53,15 @@ function OrderDetail() {
       <div className="card">
         <h2>Order: {order.orderNumber}</h2>
         <p><strong>Status:</strong> <span className={`status status-${order.status}`}>{order.status}</span></p>
+        <p><strong>Payment Method:</strong> {order.paymentMethod || 'cash'}</p>
+        <p><strong>Payment Status:</strong> {order.paymentStatus}</p>
         <p><strong>Seller:</strong> {getSellerName()}</p>
         <p><strong>Total:</strong> ${Number(order.totalPrice || 0).toFixed(2)}</p>
         <p><strong>Delivery Address:</strong> {order.shippingAddress?.street}, {order.shippingAddress?.city}</p>
-        <p><strong>Estimated Delivery:</strong> {new Date(order.estimatedDeliveryDate).toLocaleDateString()}</p>
+        <p><strong>Estimated Delivery:</strong> {(() => {
+          const ed = order?.estimatedDeliveryDate ? new Date(order.estimatedDeliveryDate) : null;
+          return ed && !isNaN(ed) ? ed.toLocaleDateString() : 'Not set';
+        })()}</p>
         
         <h3>Items</h3>
         <ul>

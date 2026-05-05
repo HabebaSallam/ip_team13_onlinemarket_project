@@ -41,10 +41,24 @@ const orderSchema = new mongoose.Schema(
       zipCode: String,
       country: String,
     },
+    estimatedDeliveryDate: {
+      type: Date,
+    },
     paymentStatus: {
       type: String,
       enum: ['pending', 'completed', 'failed'],
       default: 'pending',
+    },
+    paymentMethod: {
+      type: String,
+      enum: ['cash', 'card'],
+      default: 'cash',
+    },
+    paymentResult: {
+      provider: String,
+      transactionId: String,
+      cardLast4: String,
+      paidAt: Date,
     },
     comments: [
       {

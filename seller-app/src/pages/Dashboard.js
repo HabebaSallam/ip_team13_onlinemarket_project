@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { sellerAPI, ordersAPI } from '../api';
 import { useToast } from '../context/ToastContext';
 import './Dashboard.css';
@@ -13,11 +13,7 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const { showError } = useToast();
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       const profileRes = await sellerAPI.getProfile();
       const itemsRes = await sellerAPI.getItems();
@@ -38,7 +34,11 @@ function Dashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showError]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   if (loading) return <div className="loading">Loading...</div>;
 
@@ -58,10 +58,6 @@ function Dashboard() {
         <div className="stat-card">
           <h3>{stats.pendingOrders}</h3>
           <p>Pending Orders</p>
-        </div>
-        <div className="stat-card">
-          <h3>{stats.profile?.flags || 0}</h3>
-          <p>Flags Against You</p>
         </div>
       </div>
       

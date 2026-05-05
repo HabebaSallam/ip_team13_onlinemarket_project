@@ -42,6 +42,14 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    buyerFlags: {
+      type: Number,
+      default: 0,
+    },
+    sellerFlags: {
+      type: Number,
+      default: 0,
+    },
     createdAt: {
       type: Date,
       default: Date.now,

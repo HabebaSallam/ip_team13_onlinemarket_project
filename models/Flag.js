@@ -12,6 +12,10 @@ const flagSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    orderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Order',
+    },
     reason: {
       type: String,
       required: true,

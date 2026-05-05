@@ -4,6 +4,7 @@ const {
   getProduct,
   createProduct,
   updateProduct,
+  updateProductStock,
   deleteProduct,
 } = require('../controllers/productController');
 const {
@@ -23,6 +24,7 @@ router.get('/:id/reviews', getProductReviews);
 // Protected routes (require authentication)
 router.post('/', protect, createProduct);
 router.put('/:id', protect, updateProduct);
+router.put('/:id/stock', protect, updateProductStock);
 router.delete('/:id', protect, deleteProduct);
 
 // Review routes

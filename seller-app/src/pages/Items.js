@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { itemsAPI } from '../api';
 import { useToast } from '../context/ToastContext';
@@ -22,11 +22,7 @@ function Items() {
   const navigate = useNavigate();
   const { showError, showSuccess } = useToast();
 
-  useEffect(() => {
-    fetchItems();
-  }, []);
-
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     try {
       const user = JSON.parse(localStorage.getItem('user') || 'null');
       const sellerId = user?.id;
@@ -37,15 +33,20 @@ function Items() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showError]);
+
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
 
   const validateForm = () => {
     const errors = {};
     if (!formData.name?.trim()) errors.name = 'Item name is required';
+    if (!formData.description?.trim()) errors.description = 'Description is required';
     if (!formData.category?.trim()) errors.category = 'Category is required';
-    if (!formData.price || Number(formData.price) <= 0) errors.price = 'Valid price is required';
-    if (!formData.stock || Number(formData.stock) < 0) errors.stock = 'Valid stock quantity is required';
-    if (!formData.deliveryTimeEstimate || Number(formData.deliveryTimeEstimate) <= 0) errors.deliveryTimeEstimate = 'Valid delivery time is required';
+    if (formData.price === '' || Number(formData.price) <= 0) errors.price = 'Valid price is required';
+    if (formData.stock === '' || Number(formData.stock) < 0) errors.stock = 'Valid stock quantity is required';
+    if (formData.deliveryTimeEstimate === '' || Number(formData.deliveryTimeEstimate) <= 0) errors.deliveryTimeEstimate = 'Valid delivery time is required';
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -99,18 +100,57 @@ function Items() {
     }
   };
 
+  const groupedItems = items.reduce((groups, item) => {
+    const category = item.category?.trim() || 'Uncategorized';
+    if (!groups[category]) {
+      groups[category] = [];
+    }
+    groups[category].push(item);
+    return groups;
+  }, {});
+
+  const sortedCategories = Object.keys(groupedItems).sort((a, b) => a.localeCompare(b));
+  const totalItems = items.length;
+  const totalCategories = sortedCategories.length;
+
   if (loading) return <div className="loading">Loading...</div>;
 
   return (
     <div className="container">
-      <div className="page-title">My Items</div>
+      <section className="items-banner">
+        <div className="items-banner-copy">
+          <p className="items-banner-kicker">Inventory categories</p>
+          <h1>My Items</h1>
+          <p>
+            Grouped by category so you can see what is stocked, what needs attention, and what is ready to sell.
+          </p>
+        </div>
+
+        <div className="items-banner-panel">
+          <div className="items-banner-stat">
+            <strong>{totalItems}</strong>
+            <span>items</span>
+          </div>
+          <div className="items-banner-stat">
+            <strong>{totalCategories}</strong>
+            <span>categories</span>
+          </div>
+          <div className="items-banner-stat accent">
+            <strong>{items.filter(item => Number(item.stock || 0) <= 5).length}</strong>
+            <span>low stock</span>
+          </div>
+        </div>
+      </section>
       
-      <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
-        {showForm ? 'Cancel' : 'Add New Item'}
-      </button>
+      <div className="items-toolbar">
+        <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
+          {showForm ? 'Cancel' : 'Add New Item'}
+        </button>
+        <p className="items-toolbar-note">Use categories to keep your inventory organized and easier to scan.</p>
+      </div>
       
       {showForm && (
-        <div className="card">
+        <div className="card items-form-card">
           <h2>Add New Item</h2>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
@@ -133,6 +173,7 @@ function Items() {
                 onChange={handleChange}
                 placeholder="Item description"
               ></textarea>
+              {formErrors.description && <p className="error-text">{formErrors.description}</p>}
             </div>
             
             <div className="form-group">
@@ -196,20 +237,36 @@ function Items() {
           <p>No items yet. <button className="link-btn" onClick={() => setShowForm(true)}>Create your first item</button></p>
         </div>
       ) : (
-        <div className="grid">
-          {items.map(item => (
-            <div key={item._id} className="item-card">
-              {item.images?.[0] && <img src={item.images[0]} alt={item.name} />}
-              <h3>{item.name}</h3>
-              <p className="category">{item.category}</p>
-              <p className="price">${Number(item.price || 0).toFixed(2)}</p>
-              <p className="stock">Stock: {item.stock}</p>
-              <p className="delivery">Delivery: {item.deliveryTimeEstimate} days</p>
-              <div className="card-actions">
-                <button className="btn-secondary" onClick={() => navigate(`/items/${item._id}`)}>View</button>
-                <button className="btn-danger" onClick={() => handleDelete(item._id)}>Delete</button>
+        <div className="category-groups">
+          {sortedCategories.map((category) => (
+            <section key={category} className="category-group">
+              <div className="category-group-header">
+                <div>
+                  <p className="category-group-kicker">Category</p>
+                  <h2>{category}</h2>
+                </div>
+                <span className="category-group-count">{groupedItems[category].length} item{groupedItems[category].length === 1 ? '' : 's'}</span>
               </div>
-            </div>
+              <p className="category-group-description">
+                All items in {category} are grouped here so you can review, compare, and manage them quickly.
+              </p>
+              <div className="grid">
+                {groupedItems[category].map(item => (
+                  <div key={item._id} className="item-card">
+                    {item.images?.[0] && <img src={item.images[0]} alt={item.name} />}
+                    <h3>{item.name}</h3>
+                    <p className="category">{item.category}</p>
+                    <p className="price">${Number(item.price || 0).toFixed(2)}</p>
+                    <p className="stock">Stock: {item.stock}</p>
+                    <p className="delivery">Delivery: {item.deliveryTimeEstimate} days</p>
+                    <div className="card-actions">
+                      <button className="btn-secondary" onClick={() => navigate(`/items/${item._id}`)}>View</button>
+                      <button className="btn-danger" onClick={() => handleDelete(item._id)}>Delete</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       )}

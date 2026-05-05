@@ -16,6 +16,7 @@ const flagsRoutes = require('./routes/flags');
 const reviewRoutes = require('./routes/reviews');
 const sellersRoutes = require('./routes/sellers');
 const buyersRoutes = require('./routes/buyers');
+const paymentsRoutes = require('./routes/payments');
 
 // Import middleware
 const errorHandler = require('./middleware/errorHandler');
@@ -52,6 +53,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/sellers', sellersRoutes);
 app.use('/api/buyers', buyersRoutes);
+app.use('/api/payments', paymentsRoutes);
 
 // 404 handler
 app.use((req, res) => {

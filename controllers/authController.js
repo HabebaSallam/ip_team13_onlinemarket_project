@@ -12,7 +12,19 @@ const generateToken = (id) => {
 // @route   POST /api/auth/register
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, userType, businessName } = req.body;
+    const {
+      name,
+      email,
+      password,
+      userType,
+      businessName,
+      phone,
+      address,
+      city,
+      state,
+      zipCode,
+      serviceArea,
+    } = req.body;
 
     // Validation
     if (!name || !email || !password) {
@@ -32,6 +44,12 @@ exports.register = async (req, res) => {
       password,
       userType: userType || 'buyer',
       businessName: businessName || null,
+      phone: phone || null,
+      address: address || null,
+      city: city || null,
+      state: state || null,
+      zipCode: zipCode || null,
+      serviceArea: serviceArea || null,
     });
 
     // Generate token
@@ -46,6 +64,12 @@ exports.register = async (req, res) => {
         email: user.email,
         userType: user.userType,
         businessName: user.businessName,
+        phone: user.phone,
+        address: user.address,
+        city: user.city,
+        state: user.state,
+        zipCode: user.zipCode,
+        serviceArea: user.serviceArea,
       },
     });
   } catch (error) {
@@ -88,6 +112,12 @@ exports.login = async (req, res) => {
         email: user.email,
         userType: user.userType,
         businessName: user.businessName,
+        phone: user.phone,
+        address: user.address,
+        city: user.city,
+        state: user.state,
+        zipCode: user.zipCode,
+        serviceArea: user.serviceArea,
       },
     });
   } catch (error) {

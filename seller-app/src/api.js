@@ -42,13 +42,13 @@ export const itemsAPI = {
 export const ordersAPI = {
   getSellerOrders: () => api.get('/orders/seller/my-orders'),
   getOrder: (id) => api.get(`/orders/${id}`),
-  updateStatus: (id, status) => api.put(`/orders/${id}/status`, { status }),
-  addComment: (id, text) => api.post(`/orders/${id}/comments`, { text }),
+  updateStatus: (id, status) => api.put(`/orders/${id}`, { status }),
 };
 
 // Flags endpoints
 export const flagsAPI = {
   create: (data) => api.post('/flags', data),
+  flagOrderBuyer: (orderId, data) => api.post(`/flags/orders/${orderId}`, data),
   getMyFlags: () => api.get('/flags/my-flags'),
 };
 

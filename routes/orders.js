@@ -22,6 +22,7 @@ router.get('/', getUserOrders);
 router.get('/:id', getOrder);
 router.post('/:id/comments', addOrderComment);
 router.put('/:id', updateOrder);
+router.put('/:id/status', updateOrder);
 router.delete('/:id', cancelOrder);
 
 module.exports = router;

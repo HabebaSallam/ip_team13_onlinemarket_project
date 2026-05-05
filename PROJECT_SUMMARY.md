@@ -133,7 +133,7 @@ Located: `buyer-app/`
 - [x] Order status workflow
 - [x] User flagging system
 - [x] Product ratings and comments
-- [x] AI comment summarization (OpenAI)
+- [x] AI comment summarization (Grok)
 - [x] Complete CRUD operations
 - [x] Error handling and validation
 
@@ -256,7 +256,7 @@ MONGODB_URI=mongodb://localhost:27017/marketplace
 JWT_SECRET=your_jwt_secret_key_here
 PORT=5000
 NODE_ENV=development
-OPENAI_API_KEY=your_openai_api_key_here
+GROK_API_KEY=your_grok_api_key_here
 ```
 
 ### seller-app/.env.example
@@ -314,7 +314,7 @@ This project demonstrates:
 
 **AI Comment Summarization** ✨
 - Collects all buyer comments on a product
-- Uses OpenAI GPT API to generate intelligent summaries
+- Uses Grok to generate concise intelligent summaries
 - Displays summary on product detail page
 - Helps buyers quickly understand customer sentiment
 

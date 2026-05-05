@@ -52,6 +52,15 @@ function Catalog({ addToCart }) {
     showSuccess('Item added to cart!');
   };
 
+  const handleCategoryClick = (category) => {
+    if (!category) {
+      setFilters(prev => ({ ...prev, category: '' }));
+      return;
+    }
+
+    navigate(`/category/${encodeURIComponent(category)}`);
+  };
+
   const getSellerName = (item) => {
     if (!item?.sellerId) return 'Unknown seller';
     if (typeof item.sellerId === 'object') {
@@ -76,6 +85,37 @@ function Catalog({ addToCart }) {
   return (
     <div className="container">
       <div className="page-title">Marketplace Catalog</div>
+
+      <div className="category-hero">
+        <div>
+          <p className="category-hero-kicker">Shop by category</p>
+          <h2>Choose a category</h2>
+          <p>Tap any category to open a page with everything inside it.</p>
+        </div>
+        <div className="category-hero-count">
+          {items.length} product{items.length === 1 ? '' : 's'}
+        </div>
+      </div>
+
+      <div className="category-strip">
+        <button
+          type="button"
+          className="category-chip category-chip-wide"
+          onClick={() => handleCategoryClick('')}
+        >
+          All Categories
+        </button>
+        {categories.map(cat => (
+          <button
+            type="button"
+            key={cat}
+            className="category-chip category-chip-wide"
+            onClick={() => handleCategoryClick(cat)}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
       
       <div className="filters">
         <input
@@ -121,6 +161,7 @@ function Catalog({ addToCart }) {
             <div key={item._id} className="product-card">
               {item.images?.[0] && <img src={item.images[0]} alt={item.name} className="product-image" />}
               <div className="product-info">
+                <div className="product-category">{item.category || 'Uncategorized'}</div>
                 <div className="product-name">{item.name}</div>
                 <div className="product-seller">{getSellerName(item)}</div>
                 <div className="product-price">${Number(item.price || 0).toFixed(2)}</div>

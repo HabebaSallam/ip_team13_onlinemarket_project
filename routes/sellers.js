@@ -34,7 +34,10 @@ router.put('/profile', protect, async (req, res) => {
       { new: true }
     ).select('-password');
     
-    res.json({ message: 'Profile updated successfully', seller });
+    res.json({
+      message: 'Profile updated successfully',
+      seller,
+    });
   } catch (error) {
     res.status(500).json({ message: 'Error updating profile', error: error.message });
   }

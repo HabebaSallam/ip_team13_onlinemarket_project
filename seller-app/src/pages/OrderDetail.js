@@ -6,7 +6,6 @@ function OrderDetail() {
   const { id } = useParams();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [comment, setComment] = useState('');
 
   const fetchOrder = useCallback(async () => {
     try {
@@ -22,17 +21,6 @@ function OrderDetail() {
   useEffect(() => {
     fetchOrder();
   }, [fetchOrder]);
-
-  const handleAddComment = async (e) => {
-    e.preventDefault();
-    try {
-      await ordersAPI.addComment(id, comment);
-      setComment('');
-      fetchOrder();
-    } catch (err) {
-      console.error('Error adding comment:', err);
-    }
-  };
 
   if (loading) return <div className="loading">Loading...</div>;
   if (!order) return <div className="container">Order not found</div>;
@@ -61,18 +49,6 @@ function OrderDetail() {
             <p><strong>{c.userType === 'buyer' ? 'Buyer' : 'You'}:</strong> {c.text}</p>
           </div>
         ))}
-        
-        <form onSubmit={handleAddComment}>
-          <div className="form-group">
-            <label>Add Comment</label>
-            <textarea 
-              value={comment} 
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="Enter your comment..."
-            ></textarea>
-          </div>
-          <button type="submit" className="btn-primary">Add Comment</button>
-        </form>
       </div>
     </div>
   );

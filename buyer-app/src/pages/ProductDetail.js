@@ -9,6 +9,7 @@ function ProductDetail({ addToCart }) {
   const [ratings, setRatings] = useState([]);
   const [comments, setComments] = useState([]);
   const [summary, setSummary] = useState('');
+  const [summaryLoading, setSummaryLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showRatingForm, setShowRatingForm] = useState(false);
   const [showCommentForm, setShowCommentForm] = useState(false);
@@ -19,17 +20,15 @@ function ProductDetail({ addToCart }) {
 
   const fetchProductData = useCallback(async () => {
     try {
-      const [itemRes, ratingsRes, commentsRes, summaryRes] = await Promise.all([
+      const [itemRes, ratingsRes, commentsRes] = await Promise.all([
         itemsAPI.getById(id),
         ratingsAPI.getByItem(id),
         commentsAPI.getByItem(id),
-        commentsAPI.getSummary(id),
       ]);
 
       setItem(itemRes.data);
       setRatings(ratingsRes.data);
       setComments(commentsRes.data);
-      setSummary(summaryRes.data.summary);
     } catch (err) {
       console.error('Error fetching product data:', err);
     } finally {
@@ -40,6 +39,20 @@ function ProductDetail({ addToCart }) {
   useEffect(() => {
     fetchProductData();
   }, [fetchProductData]);
+
+  const handleGenerateSummary = async () => {
+    setSummaryLoading(true);
+    try {
+      const summaryRes = await commentsAPI.getSummary(id);
+      setSummary(summaryRes.data.summary || 'No summary available yet.');
+    } catch (err) {
+      console.error('Error fetching comment summary:', err);
+      setSummary('');
+      alert(err.response?.data?.error || 'Unable to generate AI summary. Make sure GROK_API_KEY is set.');
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
 
   const getSellerName = () => {
     if (!item?.sellerId) return 'Unknown seller';
@@ -93,11 +106,15 @@ function ProductDetail({ addToCart }) {
     }
   };
 
+
   const handleSubmitFlag = async (e) => {
     e.preventDefault();
     try {
+      const sellerId = item?.sellerId && typeof item.sellerId === 'object' ? item.sellerId._id : item?.sellerId;
+      if (!sellerId) throw new Error('Seller ID not available');
+
       await flagsAPI.create({
-        flaggedUserId: item?.sellerId?._id,
+        flaggedUserId: sellerId,
         ...flagData,
       });
       setFlagData({ reason: 'Delivery Delay', description: '' });
@@ -144,8 +161,22 @@ function ProductDetail({ addToCart }) {
       </div>
       
       <div className="card">
-        <h3>Product feedback</h3>
-        <p>{summary}</p>
+        <h3>AI Summary of Comments</h3>
+        <button
+          type="button"
+          className="btn-primary"
+          onClick={handleGenerateSummary}
+          disabled={summaryLoading}
+        >
+          {summaryLoading ? 'Generating Summary...' : 'Generate AI Summary'}
+        </button>
+        {summary ? (
+          <p className="summary" style={{ marginTop: '15px' }}>{summary}</p>
+        ) : (
+          <p className="summary" style={{ marginTop: '15px' }}>
+            Click the button to generate an AI summary from the comments.
+          </p>
+        )}
       </div>
 
       {showRatingForm && (

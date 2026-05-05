@@ -33,7 +33,7 @@ exports.createOrder = async (req, res) => {
     let totalPrice = 0;
     const orderItems = [];
 
-    // Validate items and calculate total
+    // Validate items, calculate total and estimate delivery
     for (const item of items) {
       const productId = item.product || item.itemId;
       const product = await Product.findById(productId);
@@ -55,13 +55,32 @@ exports.createOrder = async (req, res) => {
       totalPrice += (item.price || product.price) * item.quantity;
     }
 
+    // estimate delivery: use the maximum deliveryTimeEstimate among items (in days)
+    let maxDeliveryDays = 0;
+    for (const item of items) {
+      const productId = item.product || item.itemId;
+      const product = await Product.findById(productId).select('deliveryTimeEstimate');
+      const days = Number(product?.deliveryTimeEstimate || 1);
+      if (days > maxDeliveryDays) maxDeliveryDays = days;
+    }
+
+    const estimatedDeliveryDate = new Date(Date.now() + maxDeliveryDays * 24 * 60 * 60 * 1000);
+
     const order = await Order.create({
       user: req.user.id,
       items: orderItems,
       totalPrice,
       shippingAddress: address,
+      estimatedDeliveryDate,
       comments: [],
     });
+
+    // Decrement stock for each ordered item
+    for (const item of orderItems) {
+      const productId = item.product;
+      const qty = item.quantity;
+      await Product.findByIdAndUpdate(productId, { $inc: { stock: -qty } });
+    }
 
     res.status(201).json({
       success: true,
