@@ -24,7 +24,11 @@ export const authAPI = {
 export const itemsAPI = {
   getAll: (filters) => api.get('/items', { params: filters }),
   getById: (id) => api.get(`/items/${id}`),
-  getCategories: () => api.get('/items/categories/all'),
+};
+
+// Categories endpoints
+export const categoriesAPI = {
+  getAll: () => api.get('/categories'),
 };
 
 // Orders endpoints

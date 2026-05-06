@@ -35,7 +35,11 @@ export const itemsAPI = {
   create: (data) => api.post('/items', data),
   update: (id, data) => api.put(`/items/${id}`, data),
   delete: (id) => api.delete(`/items/${id}`),
-  getCategories: () => api.get('/items/categories/all'),
+};
+
+// Categories endpoints
+export const categoriesAPI = {
+  getAll: () => api.get('/categories'),
 };
 
 // Orders endpoints

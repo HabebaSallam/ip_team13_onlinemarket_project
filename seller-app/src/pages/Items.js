@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { itemsAPI } from '../api';
+import { itemsAPI, categoriesAPI } from '../api';
 import { useToast } from '../context/ToastContext';
 import './Items.css';
 
@@ -9,10 +9,12 @@ function Items() {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     category: '',
+    customCategory: '',
     price: '',
     stock: '',
     deliveryTimeEstimate: '',
@@ -26,8 +28,12 @@ function Items() {
     try {
       const user = JSON.parse(localStorage.getItem('user') || 'null');
       const sellerId = user?.id;
-      const res = await itemsAPI.getAll(sellerId ? { sellerId } : {});
-      setItems(res.data);
+      const [itemsRes, categoriesRes] = await Promise.all([
+        itemsAPI.getAll(sellerId ? { sellerId } : {}),
+        categoriesAPI.getAll(),
+      ]);
+      setItems(itemsRes.data);
+      setCategories((categoriesRes.data.categories || []).map(category => category.name));
     } catch (err) {
       showError(err.response?.data?.message || 'Failed to fetch items');
     } finally {
@@ -43,7 +49,8 @@ function Items() {
     const errors = {};
     if (!formData.name?.trim()) errors.name = 'Item name is required';
     if (!formData.description?.trim()) errors.description = 'Description is required';
-    if (!formData.category?.trim()) errors.category = 'Category is required';
+    const selectedCategory = formData.category === '__new__' ? formData.customCategory : formData.category;
+    if (!selectedCategory?.trim()) errors.category = 'Category is required';
     if (formData.price === '' || Number(formData.price) <= 0) errors.price = 'Valid price is required';
     if (formData.stock === '' || Number(formData.stock) < 0) errors.stock = 'Valid stock quantity is required';
     if (formData.deliveryTimeEstimate === '' || Number(formData.deliveryTimeEstimate) <= 0) errors.deliveryTimeEstimate = 'Valid delivery time is required';
@@ -65,14 +72,20 @@ function Items() {
       showError('Please fix the errors below');
       return;
     }
+
+    const category = formData.category === '__new__' ? formData.customCategory.trim() : formData.category.trim();
     
     setSubmitting(true);
     try {
-      await itemsAPI.create(formData);
+      await itemsAPI.create({
+        ...formData,
+        category,
+      });
       setFormData({
         name: '',
         description: '',
         category: '',
+        customCategory: '',
         price: '',
         stock: '',
         deliveryTimeEstimate: '',
@@ -178,13 +191,27 @@ function Items() {
             
             <div className="form-group">
               <label>Category <span className="required">*</span></label>
-              <input 
-                type="text" 
+              <select 
                 name="category" 
                 value={formData.category} 
                 onChange={handleChange}
-                placeholder="e.g., Electronics, Clothing"
-              />
+              >
+                <option value="">Select a category</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+                <option value="__new__">Create a new category...</option>
+              </select>
+              {formData.category === '__new__' && (
+                <input
+                  type="text"
+                  name="customCategory"
+                  value={formData.customCategory}
+                  onChange={handleChange}
+                  placeholder="Type a new category name"
+                  style={{ marginTop: '10px' }}
+                />
+              )}
               {formErrors.category && <p className="error-text">{formErrors.category}</p>}
             </div>
             

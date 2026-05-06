@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { itemsAPI } from '../api';
+import { itemsAPI, categoriesAPI } from '../api';
 import { useToast } from '../context/ToastContext';
 import './Catalog.css';
 
@@ -26,10 +26,10 @@ function Catalog({ addToCart }) {
       if (filters.maxPrice) query.maxPrice = filters.maxPrice;
 
       const [catRes, itemsRes] = await Promise.all([
-        itemsAPI.getCategories(),
+        categoriesAPI.getAll(),
         itemsAPI.getAll(query),
       ]);
-      setCategories(catRes.data);
+      setCategories((catRes.data.categories || []).map(category => category.name));
       setItems(itemsRes.data);
     } catch (err) {
       showError(err.response?.data?.message || 'Failed to load catalog');

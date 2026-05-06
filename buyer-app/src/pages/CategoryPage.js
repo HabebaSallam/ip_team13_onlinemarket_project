@@ -11,6 +11,14 @@ function CategoryPage({ addToCart }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const getSellerName = (item) => {
+    if (!item?.sellerId) return 'Unknown seller';
+    if (typeof item.sellerId === 'object') {
+      return item.sellerId.businessName || item.sellerId.name || 'Unknown seller';
+    }
+    return 'Unknown seller';
+  };
+
   const categoryLabel = decodeURIComponent(categoryName || '');
   const sellerCount = new Set(
     items
@@ -38,14 +46,6 @@ function CategoryPage({ addToCart }) {
   useEffect(() => {
     fetchCategoryItems();
   }, [fetchCategoryItems]);
-
-  const getSellerName = (item) => {
-    if (!item?.sellerId) return 'Unknown seller';
-    if (typeof item.sellerId === 'object') {
-      return item.sellerId.businessName || item.sellerId.name || 'Unknown seller';
-    }
-    return 'Unknown seller';
-  };
 
   const handleAddToCart = (item) => {
     addToCart(item);
