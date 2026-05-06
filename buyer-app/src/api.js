@@ -31,6 +31,15 @@ export const categoriesAPI = {
   getAll: () => api.get('/categories'),
 };
 
+// Cart endpoints
+export const cartAPI = {
+  getCart: () => api.get('/cart'),
+  addToCart: (productId, quantity) => api.post('/cart/add', { productId, quantity }),
+  removeFromCart: (productId) => api.post('/cart/remove', { productId }),
+  updateCartItem: (productId, quantity) => api.post('/cart/update', { productId, quantity }),
+  clearCart: () => api.delete('/cart/clear'),
+};
+
 // Orders endpoints
 export const ordersAPI = {
   create: (data) => api.post('/orders', data),

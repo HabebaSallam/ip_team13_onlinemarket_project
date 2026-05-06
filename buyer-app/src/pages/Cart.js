@@ -4,7 +4,7 @@ import { ordersAPI, api } from '../api';
 import { useToast } from '../context/ToastContext';
 import './Cart.css';
 
-function Cart({ cart, removeFromCart, updateQuantity }) {
+function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState(null);
   const navigate = useNavigate();
@@ -64,7 +64,9 @@ function Cart({ cart, removeFromCart, updateQuantity }) {
       });
 
       const createdOrder = response.data.order || response.data;
-      localStorage.setItem('cart', JSON.stringify([]));
+      if (typeof clearCart === 'function') {
+        await clearCart();
+      }
       showSuccess('Order created. Proceed to payment.');
       setTimeout(() => navigate(`/checkout/${createdOrder._id}`), 800);
     } catch (err) {
