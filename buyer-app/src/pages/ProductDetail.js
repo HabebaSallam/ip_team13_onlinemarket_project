@@ -78,7 +78,7 @@ function ProductDetail({ addToCart }) {
     try {
       await ratingsAPI.create({
         itemId: id,
-        rating: rating,
+        rating,
       });
       setRating(5);
       setShowRatingForm(false);
@@ -253,7 +253,6 @@ function ProductDetail({ addToCart }) {
                 <strong>{rating.user?.name || 'Buyer'}</strong>
                 <span className="rating-stars">⭐ {rating.rating}/5</span>
               </div>
-              <p>{rating.comment}</p>
             </div>
           ))}
         </div>

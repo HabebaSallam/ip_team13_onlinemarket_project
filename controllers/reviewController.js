@@ -23,10 +23,10 @@ exports.getProductReviews = async (req, res) => {
 // @route   POST /api/products/:id/reviews
 exports.createReview = async (req, res) => {
   try {
-    const { rating, comment } = req.body;
+    const { rating } = req.body;
 
-    if (!rating || !comment) {
-      return res.status(400).json({ error: 'Please provide rating and comment' });
+    if (!rating) {
+      return res.status(400).json({ error: 'Please provide rating' });
     }
 
     if (rating < 1 || rating > 5) {
@@ -53,7 +53,6 @@ exports.createReview = async (req, res) => {
       product: req.params.id,
       user: req.user.id,
       rating,
-      comment,
     });
 
     // Update product rating
