@@ -14,7 +14,7 @@ function ProductDetail({ addToCart }) {
   const [showRatingForm, setShowRatingForm] = useState(false);
   const [showCommentForm, setShowCommentForm] = useState(false);
   const [showFlagForm, setShowFlagForm] = useState(false);
-  const [ratingData, setRatingData] = useState({ rating: 5, review: '' });
+  const [rating, setRating] = useState(5);
   const [commentText, setCommentText] = useState('');
   const [flagData, setFlagData] = useState({ reason: 'Delivery Delay', description: '' });
 
@@ -78,15 +78,14 @@ function ProductDetail({ addToCart }) {
     try {
       await ratingsAPI.create({
         itemId: id,
-        rating: ratingData.rating,
-        review: ratingData.review,
+        rating: rating,
       });
-      setRatingData({ rating: 5, review: '' });
+      setRating(5);
       setShowRatingForm(false);
       await fetchProductData();
     } catch (err) {
       console.error('Error submitting rating:', err);
-      alert(err.response?.data?.error || 'Unable to submit review');
+      alert(err.response?.data?.error || 'Unable to submit rating');
     }
   };
 
@@ -150,7 +149,7 @@ function ProductDetail({ addToCart }) {
           <div className="actions">
             <button className="btn-primary btn-large" onClick={() => addToCart(item)}>Add to Cart</button>
             <button className="btn-secondary" onClick={() => setShowRatingForm(!showRatingForm)}>
-              {showRatingForm ? 'Hide Review Form' : 'Add Review'}
+              {showRatingForm ? 'Hide Rating Form' : 'Rate'}
             </button>
             <button className="btn-secondary" onClick={() => setShowCommentForm(!showCommentForm)}>
               {showCommentForm ? 'Hide Comment Form' : 'Add Comment'}
@@ -181,11 +180,11 @@ function ProductDetail({ addToCart }) {
 
       {showRatingForm && (
         <div className="card">
-          <h3>Add Review</h3>
+          <h3>Rate This Product</h3>
           <form onSubmit={handleSubmitRating} className="rating-form">
             <div className="form-group">
               <label>Rating</label>
-              <select value={ratingData.rating} onChange={(e) => setRatingData({ ...ratingData, rating: parseInt(e.target.value, 10) })}>
+              <select value={rating} onChange={(e) => setRating(parseInt(e.target.value, 10))}>
                 <option value="1">1 - Poor</option>
                 <option value="2">2 - Fair</option>
                 <option value="3">3 - Good</option>
@@ -193,15 +192,7 @@ function ProductDetail({ addToCart }) {
                 <option value="5">5 - Excellent</option>
               </select>
             </div>
-            <div className="form-group">
-              <label>Review</label>
-              <textarea
-                value={ratingData.review}
-                onChange={(e) => setRatingData({ ...ratingData, review: e.target.value })}
-                placeholder="Share your thoughts about this product..."
-              />
-            </div>
-            <button type="submit" className="btn-primary">Submit Review</button>
+            <button type="submit" className="btn-primary">Submit Rating</button>
           </form>
         </div>
       )}

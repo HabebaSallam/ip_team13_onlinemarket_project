@@ -19,10 +19,10 @@ router.get('/item/:itemId', async (req, res) => {
 
 router.post('/', protect, async (req, res) => {
   try {
-    const { itemId, rating, review } = req.body;
+    const { itemId, rating } = req.body;
 
-    if (!itemId || !rating || !review) {
-      return res.status(400).json({ error: 'Please provide itemId, rating, and review' });
+    if (!itemId || !rating) {
+      return res.status(400).json({ error: 'Please provide itemId and rating' });
     }
 
     const product = await Product.findById(itemId);
@@ -39,7 +39,6 @@ router.post('/', protect, async (req, res) => {
       product: itemId,
       user: req.user.id,
       rating,
-      comment: review,
     });
 
     const allReviews = await Review.find({ product: itemId });
