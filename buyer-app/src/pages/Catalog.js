@@ -8,6 +8,7 @@ function Catalog({ addToCart }) {
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [itemsToShow, setItemsToShow] = useState(10);
   const [filters, setFilters] = useState({
     search: '',
     category: '',
@@ -31,6 +32,7 @@ function Catalog({ addToCart }) {
       ]);
       setCategories((catRes.data.categories || []).map(category => category.name));
       setItems(itemsRes.data);
+      setItemsToShow(10); // Reset to initial count when filters change
     } catch (err) {
       showError(err.response?.data?.message || 'Failed to load catalog');
     } finally {
@@ -156,35 +158,47 @@ function Catalog({ addToCart }) {
           <p>No products found. Try adjusting your filters.</p>
         </div>
       ) : (
-        <div className="product-grid">
-          {items.map(item => (
-            <div key={item._id} className="product-card">
-              {item.images?.[0] && <img src={item.images[0]} alt={item.name} className="product-image" />}
-              <div className="product-info">
-                <div className="product-category">{item.category || 'Uncategorized'}</div>
-                <div className="product-name">{item.name}</div>
-                <div className="product-seller">{getSellerName(item)}</div>
-                <div className="product-price">${Number(item.price || 0).toFixed(2)}</div>
-                <div className="product-rating">{getRatingText(item)}</div>
-                <div className="product-delivery">Delivery: {item.deliveryTimeEstimate || 'TBD'} days</div>
-                <div className="product-actions">
-                  <button 
-                    className="btn-primary" 
-                    onClick={() => navigate(`/product/${item._id}`)}
-                  >
-                    View
-                  </button>
-                  <button 
-                    className="btn-secondary" 
-                    onClick={() => handleAddToCart(item)}
-                  >
-                    Add to Cart
-                  </button>
+        <>
+          <div className="product-grid">
+            {items.slice(0, itemsToShow).map(item => (
+              <div key={item._id} className="product-card">
+                {item.images?.[0] && <img src={item.images[0]} alt={item.name} className="product-image" />}
+                <div className="product-info">
+                  <div className="product-category">{item.category || 'Uncategorized'}</div>
+                  <div className="product-name">{item.name}</div>
+                  <div className="product-seller">{getSellerName(item)}</div>
+                  <div className="product-price">${Number(item.price || 0).toFixed(2)}</div>
+                  <div className="product-rating">{getRatingText(item)}</div>
+                  <div className="product-delivery">Delivery: {item.deliveryTimeEstimate || 'TBD'} days</div>
+                  <div className="product-actions">
+                    <button 
+                      className="btn-primary" 
+                      onClick={() => navigate(`/product/${item._id}`)}
+                    >
+                      View
+                    </button>
+                    <button 
+                      className="btn-secondary" 
+                      onClick={() => handleAddToCart(item)}
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+          {itemsToShow < items.length && (
+            <div style={{ textAlign: 'center', marginTop: '30px', marginBottom: '30px' }}>
+              <button 
+                className="btn-primary" 
+                onClick={() => setItemsToShow(prev => prev + 5)}
+              >
+                Load More
+              </button>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );
