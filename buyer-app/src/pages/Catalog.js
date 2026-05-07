@@ -63,6 +63,10 @@ function Catalog({ addToCart }) {
     navigate(`/category/${encodeURIComponent(category)}`);
   };
 
+  const totalProducts = items.length;
+  const totalCategories = categories.length;
+  const featuredCategory = categories[0] || 'All products';
+
   const getSellerName = (item) => {
     if (!item?.sellerId) return 'Unknown seller';
     if (typeof item.sellerId === 'object') {
@@ -89,13 +93,22 @@ function Catalog({ addToCart }) {
       <div className="page-title">Marketplace Catalog</div>
 
       <div className="category-hero">
-        <div>
+        <div className="category-hero-copy">
           <p className="category-hero-kicker">Shop by category</p>
           <h2>Choose a category</h2>
           <p>Tap any category to open a page with everything inside it.</p>
+          <div className="category-hero-pill-row">
+          </div>
         </div>
-        <div className="category-hero-count">
-          {items.length} product{items.length === 1 ? '' : 's'}
+        <div className="category-hero-panel">
+          <div className="category-hero-stat">
+            <strong>{totalProducts}</strong>
+            <span>products</span>
+          </div>
+          <div className="category-hero-stat">
+            <strong>{totalCategories}</strong>
+            <span>categories</span>
+          </div>
         </div>
       </div>
 
@@ -105,7 +118,8 @@ function Catalog({ addToCart }) {
           className="category-chip category-chip-wide"
           onClick={() => handleCategoryClick('')}
         >
-          All Categories
+          <span className="category-chip-label">All Categories</span>
+          <span className="category-chip-count">Browse everything</span>
         </button>
         {categories.map(cat => (
           <button
@@ -114,7 +128,11 @@ function Catalog({ addToCart }) {
             className="category-chip category-chip-wide"
             onClick={() => handleCategoryClick(cat)}
           >
-            {cat}
+            <span className="category-chip-label">{cat}</span>
+            <span className="category-chip-count">
+              {items.filter((item) => (item.category || 'Uncategorized') === cat).length} item
+              {items.filter((item) => (item.category || 'Uncategorized') === cat).length === 1 ? '' : 's'}
+            </span>
           </button>
         ))}
       </div>
@@ -160,33 +178,39 @@ function Catalog({ addToCart }) {
       ) : (
         <>
           <div className="product-grid">
-            {items.slice(0, itemsToShow).map(item => (
-              <div key={item._id} className="product-card">
-                {item.images?.[0] && <img src={item.images[0]} alt={item.name} className="product-image" />}
-                <div className="product-info">
-                  <div className="product-category">{item.category || 'Uncategorized'}</div>
-                  <div className="product-name">{item.name}</div>
-                  <div className="product-seller">{getSellerName(item)}</div>
-                  <div className="product-price">${Number(item.price || 0).toFixed(2)}</div>
-                  <div className="product-rating">{getRatingText(item)}</div>
-                  <div className="product-delivery">Delivery: {item.deliveryTimeEstimate || 'TBD'} days</div>
-                  <div className="product-actions">
-                    <button 
-                      className="btn-primary" 
-                      onClick={() => navigate(`/product/${item._id}`)}
-                    >
-                      View
-                    </button>
-                    <button 
-                      className="btn-secondary" 
-                      onClick={() => handleAddToCart(item)}
-                    >
-                      Add to Cart
-                    </button>
+            {items.slice(0, itemsToShow).map(item => {
+                const outOfStock = Number(item.stock ?? 0) <= 0;
+                return (
+                <div key={item._id} className={`product-card ${outOfStock ? 'out-of-stock' : ''}`}>
+                  {item.images?.[0] && <img src={item.images[0]} alt={item.name} className="product-image" />}
+                  {outOfStock && <div className="out-of-stock-badge">Out of stock</div>}
+                  <div className="product-info">
+                    <div className="product-category">{item.category || 'Uncategorized'}</div>
+                    <div className="product-name">{item.name}</div>
+                    <div className="product-seller">{getSellerName(item)}</div>
+                    <div className="product-price">${Number(item.price || 0).toFixed(2)}</div>
+                    <div className="product-rating">{getRatingText(item)}</div>
+                    <div className="product-delivery">Delivery: {item.deliveryTimeEstimate || 'TBD'} days</div>
+                    <div className="product-actions">
+                      <button 
+                        className="btn-primary" 
+                        onClick={() => navigate(`/product/${item._id}`)}
+                      >
+                        View
+                      </button>
+                      <button 
+                        className="btn-secondary" 
+                        onClick={() => handleAddToCart(item)}
+                        disabled={outOfStock}
+                        aria-disabled={outOfStock}
+                      >
+                        {outOfStock ? 'Out of stock' : 'Add to Cart'}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           {itemsToShow < items.length && (
             <div style={{ textAlign: 'center', marginTop: '30px', marginBottom: '30px' }}>

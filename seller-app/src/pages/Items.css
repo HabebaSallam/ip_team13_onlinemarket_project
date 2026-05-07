@@ -164,6 +164,20 @@
   font-size: 12px;
 }
 
+.stock-edit-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  align-items: center;
+}
+
+.stock-input {
+  width: 96px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
 .category {
   display: inline-flex;
   align-items: center;

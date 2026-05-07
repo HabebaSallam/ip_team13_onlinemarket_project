@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { ordersAPI } from '../api';
+import { filterOrderForCurrentSeller, getSellerLabel } from '../utils/orderView';
 
 function OrderDetail() {
   const { id } = useParams();
@@ -10,7 +11,7 @@ function OrderDetail() {
   const fetchOrder = useCallback(async () => {
     try {
       const res = await ordersAPI.getOrder(id);
-      setOrder(res.data.order);
+      setOrder(filterOrderForCurrentSeller(res.data.order));
     } catch (err) {
       console.error('Error fetching order:', err);
     } finally {
@@ -25,6 +26,8 @@ function OrderDetail() {
   if (loading) return <div className="loading">Loading...</div>;
   if (!order) return <div className="container">Order not found</div>;
 
+  const sellerLabel = getSellerLabel(order.items?.[0]?.product?.sellerId);
+
   return (
     <div className="container">
       <div className="page-title">Order Details</div>
@@ -33,6 +36,7 @@ function OrderDetail() {
         <h2>Order: {order.orderNumber}</h2>
         <p><strong>Status:</strong> {order.status}</p>
         <p><strong>Buyer:</strong> {order.user?.name || 'Buyer'}</p>
+        <p><strong>Seller:</strong> {sellerLabel}</p>
         <p><strong>Total:</strong> ${Number(order.totalPrice || 0).toFixed(2)}</p>
         <p><strong>Delivery Address:</strong> {order.shippingAddress?.street}, {order.shippingAddress?.city}</p>
         

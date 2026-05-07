@@ -11,6 +11,42 @@ const populateOrderProducts = () => ({
   },
 });
 
+const getSellerIdValue = (sellerId) => {
+  if (!sellerId) return null;
+  if (typeof sellerId === 'object') {
+    return sellerId._id?.toString?.() || sellerId.toString?.() || null;
+  }
+  return sellerId.toString();
+};
+
+const buildSellerOrderView = (order, sellerId) => {
+  if (!order) return null;
+
+  const sellerIdValue = getSellerIdValue(sellerId);
+  const orderObject = typeof order.toObject === 'function' ? order.toObject() : { ...order };
+
+  const sellerItems = (orderObject.items || []).filter((item) => {
+    const productSellerId = item?.product?.sellerId;
+    return getSellerIdValue(productSellerId) === sellerIdValue;
+  });
+
+  if (sellerItems.length === 0) {
+    return null;
+  }
+
+  const sellerTotalPrice = sellerItems.reduce((sum, item) => {
+    const itemPrice = Number(item.price || 0);
+    const itemQuantity = Number(item.quantity || 0);
+    return sum + itemPrice * itemQuantity;
+  }, 0);
+
+  return {
+    ...orderObject,
+    items: sellerItems,
+    totalPrice: sellerTotalPrice,
+  };
+};
+
 const userOwnsOrderAsSeller = (order, sellerId) => {
   return order.items.some((item) => {
     const product = item.product;
@@ -118,7 +154,9 @@ exports.getSellerOrders = async (req, res) => {
       .populate(populateOrderProducts())
       .sort({ createdAt: -1 });
 
-    const sellerOrders = orders.filter((order) => userOwnsOrderAsSeller(order, req.user.id));
+    const sellerOrders = orders
+      .map((order) => buildSellerOrderView(order, req.user.id))
+      .filter(Boolean);
 
     res.status(200).json({
       success: true,
@@ -148,6 +186,15 @@ exports.getOrder = async (req, res) => {
 
     if (!isBuyer && !isSeller) {
       return res.status(403).json({ error: 'Not authorized to view this order' });
+    }
+
+    if (isSeller && !isBuyer) {
+      const sellerOrder = buildSellerOrderView(order, req.user.id);
+
+      return res.status(200).json({
+        success: true,
+        order: sellerOrder,
+      });
     }
 
     res.status(200).json({

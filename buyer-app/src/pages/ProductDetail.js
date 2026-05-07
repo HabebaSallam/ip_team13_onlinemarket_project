@@ -128,6 +128,8 @@ function ProductDetail({ addToCart }) {
   if (loading) return <div className="loading">Loading...</div>;
   if (!item) return <div className="container">Product not found</div>;
 
+  const outOfStock = Number(item.stock ?? 0) <= 0;
+
   return (
     <div className="container">
       <div className="page-title">Product Details</div>
@@ -144,10 +146,10 @@ function ProductDetail({ addToCart }) {
           <p className="rating">{getRatingText()}</p>
           <p className="description">{item.description}</p>
           <p className="delivery">Delivery Time: {item.deliveryTimeEstimate} days</p>
-          <p className="stock">Stock Available: {item.stock}</p>
+          <p className="stock">{outOfStock ? <span className="out-of-stock-inline">Out of stock</span> : `Stock Available: ${item.stock}`}</p>
           
           <div className="actions">
-            <button className="btn-primary btn-large" onClick={() => addToCart(item)}>Add to Cart</button>
+            <button className="btn-primary btn-large" onClick={() => addToCart(item)} disabled={outOfStock} aria-disabled={outOfStock}>{outOfStock ? 'Out of stock' : 'Add to Cart'}</button>
             <button className="btn-secondary" onClick={() => setShowRatingForm(!showRatingForm)}>
               {showRatingForm ? 'Hide Rating Form' : 'Rate'}
             </button>

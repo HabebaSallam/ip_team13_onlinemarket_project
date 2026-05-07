@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ordersAPI, flagsAPI } from '../api';
 import { useToast } from '../context/ToastContext';
+import { filterOrderForCurrentSeller } from '../utils/orderView';
 import './Orders.css';
 
 function Orders() {
@@ -15,7 +16,10 @@ function Orders() {
   const fetchOrders = useCallback(async () => {
     try {
       const res = await ordersAPI.getSellerOrders();
-      setOrders(res.data.orders || []);
+      const sellerOrders = (res.data.orders || [])
+        .map(filterOrderForCurrentSeller)
+        .filter(Boolean);
+      setOrders(sellerOrders);
     } catch (err) {
       showError(err.response?.data?.message || 'Failed to fetch orders');
     } finally {

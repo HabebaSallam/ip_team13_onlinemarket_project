@@ -101,9 +101,12 @@ function CategoryPage({ addToCart }) {
         </div>
       ) : (
         <div className="product-grid category-results-grid">
-          {items.map(item => (
-            <div key={item._id} className="product-card">
+          {items.map(item => {
+            const outOfStock = Number(item.stock ?? 0) <= 0;
+            return (
+            <div key={item._id} className={`product-card ${outOfStock ? 'out-of-stock' : ''}`}>
               {item.images?.[0] && <img src={item.images[0]} alt={item.name} className="product-image" />}
+              {outOfStock && <div className="out-of-stock-badge">Out of stock</div>}
               <div className="product-info">
                 <div className="product-category">{item.category || 'Uncategorized'}</div>
                 <div className="product-name">{item.name}</div>
@@ -112,11 +115,12 @@ function CategoryPage({ addToCart }) {
                 <div className="product-delivery">Delivery: {item.deliveryTimeEstimate || 'TBD'} days</div>
                 <div className="product-actions">
                   <button className="btn-primary" onClick={() => navigate(`/product/${item._id}`)}>View</button>
-                  <button className="btn-secondary" onClick={() => handleAddToCart(item)}>Add to Cart</button>
+                  <button className="btn-secondary" onClick={() => handleAddToCart(item)} disabled={outOfStock} aria-disabled={outOfStock}>{outOfStock ? 'Out of stock' : 'Add to Cart'}</button>
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

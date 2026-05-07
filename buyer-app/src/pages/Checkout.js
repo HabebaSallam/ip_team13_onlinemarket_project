@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ordersAPI, paymentsAPI } from '../api';
 import { useToast } from '../context/ToastContext';
+import { groupItemsBySeller } from '../utils/orderView';
 import './Cart.css';
 
 function Checkout() {
@@ -90,6 +91,8 @@ function Checkout() {
 
   if (!order) return <div className="loading">Loading order...</div>;
 
+  const sellerGroups = groupItemsBySeller(order.items);
+
   return (
     <div className="container">
       <div className="page-title">Checkout</div>
@@ -101,13 +104,19 @@ function Checkout() {
         <p><strong>Payment Method:</strong> {order.paymentMethod || 'Not selected yet'}</p>
 
         <h4>Items</h4>
-        <ul>
-          {order.items?.map((item) => (
-            <li key={item._id || item.product?._id}>
-              {item.product?.name || 'Item'} x{item.quantity} - ${Number(item.price || 0).toFixed(2)}
-            </li>
-          ))}
-        </ul>
+        {sellerGroups.map((group) => (
+          <div key={group.sellerKey} style={{ marginBottom: '18px' }}>
+            <h5 style={{ marginBottom: '8px' }}>{group.sellerLabel}</h5>
+            <ul>
+              {group.items.map((item) => (
+                <li key={item._id || item.product?._id}>
+                  {item.product?.name || 'Item'} x{item.quantity} - ${Number(item.price || 0).toFixed(2)}
+                </li>
+              ))}
+            </ul>
+            <p><strong>Seller subtotal:</strong> ${Number(group.total || 0).toFixed(2)}</p>
+          </div>
+        ))}
 
         <h4>Choose payment method</h4>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '12px', marginBottom: '16px' }}>

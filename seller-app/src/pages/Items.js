@@ -10,6 +10,8 @@ function Items() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [stockEdits, setStockEdits] = useState({});
+  const [updatingStock, setUpdatingStock] = useState({});
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -113,6 +115,35 @@ function Items() {
     }
   };
 
+  const handleStockChange = (id, value) => {
+    setStockEdits(prev => ({ ...prev, [id]: value }));
+  };
+
+  const saveStock = async (id) => {
+    const value = stockEdits[id];
+    if (value === undefined || value === '') {
+      showError('Please enter a valid stock quantity');
+      return;
+    }
+    const qty = Number(value);
+    if (!Number.isFinite(qty) || qty < 0) {
+      showError('Stock must be a non-negative number');
+      return;
+    }
+
+    setUpdatingStock(prev => ({ ...prev, [id]: true }));
+    try {
+      await itemsAPI.update(id, { stock: qty });
+      showSuccess('Stock updated');
+      fetchItems();
+      setStockEdits(prev => ({ ...prev, [id]: '' }));
+    } catch (err) {
+      showError(err.response?.data?.message || 'Failed to update stock');
+    } finally {
+      setUpdatingStock(prev => ({ ...prev, [id]: false }));
+    }
+  };
+
   const groupedItems = items.reduce((groups, item) => {
     const category = item.category?.trim() || 'Uncategorized';
     if (!groups[category]) {
@@ -159,7 +190,6 @@ function Items() {
         <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
           {showForm ? 'Cancel' : 'Add New Item'}
         </button>
-        <p className="items-toolbar-note">Use categories to keep your inventory organized and easier to scan.</p>
       </div>
       
       {showForm && (
@@ -286,6 +316,23 @@ function Items() {
                     <p className="price">${Number(item.price || 0).toFixed(2)}</p>
                     <p className="stock">Stock: {item.stock}</p>
                     <p className="delivery">Delivery: {item.deliveryTimeEstimate} days</p>
+                    <div className="stock-edit-row">
+                      <input
+                        type="number"
+                        min="0"
+                        className="stock-input"
+                        value={stockEdits[item._id] ?? ''}
+                        placeholder={String(item.stock)}
+                        onChange={(e) => handleStockChange(item._id, e.target.value)}
+                      />
+                      <button
+                        className="btn-primary"
+                        onClick={() => saveStock(item._id)}
+                        disabled={updatingStock[item._id]}
+                      >
+                        {updatingStock[item._id] ? 'Saving...' : 'Save'}
+                      </button>
+                    </div>
                     <div className="card-actions">
                       <button className="btn-secondary" onClick={() => navigate(`/items/${item._id}`)}>View</button>
                       <button className="btn-danger" onClick={() => handleDelete(item._id)}>Delete</button>

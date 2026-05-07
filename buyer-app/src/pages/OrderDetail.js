@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { ordersAPI } from '../api';
+import { groupItemsBySeller } from '../utils/orderView';
 
 function OrderDetail() {
   const { id } = useParams();
@@ -34,17 +35,10 @@ function OrderDetail() {
     }
   };
 
-  const getSellerName = () => {
-    const seller = order?.items?.[0]?.product?.sellerId;
-    if (!seller) return 'Unknown seller';
-    if (typeof seller === 'object') {
-      return seller.businessName || seller.name || 'Unknown seller';
-    }
-    return 'Unknown seller';
-  };
-
   if (loading) return <div className="loading">Loading...</div>;
   if (!order) return <div className="container">Order not found</div>;
+
+  const sellerGroups = groupItemsBySeller(order.items);
 
   return (
     <div className="container">
@@ -55,7 +49,6 @@ function OrderDetail() {
         <p><strong>Status:</strong> <span className={`status status-${order.status}`}>{order.status}</span></p>
         <p><strong>Payment Method:</strong> {order.paymentMethod || 'cash'}</p>
         <p><strong>Payment Status:</strong> {order.paymentStatus}</p>
-        <p><strong>Seller:</strong> {getSellerName()}</p>
         <p><strong>Total:</strong> ${Number(order.totalPrice || 0).toFixed(2)}</p>
         <p><strong>Delivery Address:</strong> {order.shippingAddress?.street}, {order.shippingAddress?.city}</p>
         <p><strong>Estimated Delivery:</strong> {(() => {
@@ -64,11 +57,17 @@ function OrderDetail() {
         })()}</p>
         
         <h3>Items</h3>
-        <ul>
-          {order.items.map(item => (
-            <li key={item._id}>{item.product?.name || 'Item'} x{item.quantity} - ${Number(item.price || 0).toFixed(2)}</li>
-          ))}
-        </ul>
+        {sellerGroups.map((group) => (
+          <div key={group.sellerKey} style={{ marginBottom: '18px' }}>
+            <h4 style={{ marginBottom: '8px' }}>{group.sellerLabel}</h4>
+            <ul>
+              {group.items.map((item) => (
+                <li key={item._id}>{item.product?.name || 'Item'} x{item.quantity} - ${Number(item.price || 0).toFixed(2)}</li>
+              ))}
+            </ul>
+            <p><strong>Seller subtotal:</strong> ${Number(group.total || 0).toFixed(2)}</p>
+          </div>
+        ))}
         
         <h3>Communication</h3>
         {order.comments?.map((c, i) => (

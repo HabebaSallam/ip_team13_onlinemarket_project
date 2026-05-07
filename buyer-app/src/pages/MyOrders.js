@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ordersAPI } from '../api';
 import { useToast } from '../context/ToastContext';
+import { formatSellerSummary } from '../utils/orderView';
 import './MyOrders.css';
 
 function MyOrders() {
@@ -24,15 +25,6 @@ function MyOrders() {
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
-
-  const getSellerName = (order) => {
-    const seller = order?.items?.[0]?.product?.sellerId;
-    if (!seller) return 'Unknown seller';
-    if (typeof seller === 'object') {
-      return seller.businessName || seller.name || 'Unknown seller';
-    }
-    return 'Unknown seller';
-  };
 
   if (loading) return <div className="loading">Loading...</div>;
 
@@ -62,7 +54,7 @@ function MyOrders() {
             {orders.map(order => (
               <tr key={order._id} onClick={() => navigate(`/orders/${order._id}`)} style={{ cursor: 'pointer' }}>
                 <td>{order.orderNumber || order._id?.substring(0, 8)}</td>
-                <td>{getSellerName(order)}</td>
+                <td>{formatSellerSummary(order.items)}</td>
                 <td>${Number(order.totalPrice || 0).toFixed(2)}</td>
                 <td>{order.paymentMethod || 'cash'} / {order.paymentStatus || 'pending'}</td>
                 <td><span className={`status status-${order.status}`}>{order.status}</span></td>
