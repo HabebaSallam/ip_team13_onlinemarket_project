@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { itemsAPI, ratingsAPI, commentsAPI, flagsAPI, cartAPI } from '../api';
+import { itemsAPI, ratingsAPI, commentsAPI, flagsAPI } from '../api';
 import { useToast } from '../context/ToastContext';
 import './ProductDetail.css';
 
@@ -131,12 +131,10 @@ function ProductDetail({ addToCart: addToCartFromParent }) {
   const handleAddToCart = async () => {
     setAddingToCart(true);
     try {
-      const response = await cartAPI.addToCart(item._id, 1);
-      showSuccess('Item added to cart');
-      // Call parent addToCart to sync state if needed
       if (addToCartFromParent) {
-        addToCartFromParent(item);
+        await addToCartFromParent(item);
       }
+      showSuccess('Item added to cart');
     } catch (err) {
       const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
       showError(errorMessage);

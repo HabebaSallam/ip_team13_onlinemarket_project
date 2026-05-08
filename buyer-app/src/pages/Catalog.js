@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { itemsAPI, categoriesAPI, cartAPI } from '../api';
+import { itemsAPI, categoriesAPI } from '../api';
 import { useToast } from '../context/ToastContext';
 import './Catalog.css';
 
@@ -53,12 +53,10 @@ function Catalog({ addToCart: addToCartFromParent }) {
   const handleAddToCart = async (item) => {
     setAddingItemId(item._id);
     try {
-      const response = await cartAPI.addToCart(item._id, 1);
-      showSuccess('Item added to cart!');
-      // Call parent addToCart to sync state if needed
       if (addToCartFromParent) {
-        addToCartFromParent(item);
+        await addToCartFromParent(item);
       }
+      showSuccess('Item added to cart!');
     } catch (err) {
       const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
       showError(errorMessage);
