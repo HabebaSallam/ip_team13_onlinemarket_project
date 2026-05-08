@@ -2,6 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('./swagger.json');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -39,6 +41,10 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/online_ma
 app.get('/api/health', (req, res) => {
   res.json({ status: 'Backend is running' });
 });
+
+// Swagger docs
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.get('/api-docs.json', (req, res) => res.json(swaggerDocument));
 
 // Routes
 app.use('/api/auth', authRoutes);
