@@ -44,7 +44,7 @@ function Dashboard() {
 
   return (
     <div className="container">
-      <div className="page-title">Seller Dashboard</div>
+      <h1 className="page-title">Seller Dashboard</h1>
       
       <div className="stats-grid">
         <div className="stat-card">
