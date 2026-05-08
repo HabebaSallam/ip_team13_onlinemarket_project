@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { itemsAPI, ratingsAPI, commentsAPI, flagsAPI } from '../api';
+import { itemsAPI, ratingsAPI, commentsAPI, flagsAPI, cartAPI } from '../api';
+import { useToast } from '../context/ToastContext';
 import './ProductDetail.css';
 
-function ProductDetail({ addToCart }) {
+function ProductDetail({ addToCart: addToCartFromParent }) {
   const { id } = useParams();
+  const { showError, showSuccess } = useToast();
   const [item, setItem] = useState(null);
   const [ratings, setRatings] = useState([]);
   const [comments, setComments] = useState([]);
   const [summary, setSummary] = useState('');
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [addingToCart, setAddingToCart] = useState(false);
   const [showRatingForm, setShowRatingForm] = useState(false);
   const [showCommentForm, setShowCommentForm] = useState(false);
   const [showFlagForm, setShowFlagForm] = useState(false);
@@ -125,6 +128,24 @@ function ProductDetail({ addToCart }) {
     }
   };
 
+  const handleAddToCart = async () => {
+    setAddingToCart(true);
+    try {
+      const response = await cartAPI.addToCart(item._id, 1);
+      showSuccess('Item added to cart');
+      // Call parent addToCart to sync state if needed
+      if (addToCartFromParent) {
+        addToCartFromParent(item);
+      }
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
+      showError(errorMessage);
+      console.error('Error adding to cart:', err);
+    } finally {
+      setAddingToCart(false);
+    }
+  };
+
   if (loading) return <div className="loading">Loading...</div>;
   if (!item) return <div className="container">Product not found</div>;
 
@@ -149,7 +170,9 @@ function ProductDetail({ addToCart }) {
           <p className="stock">{outOfStock ? <span className="out-of-stock-inline">Out of stock</span> : `Stock Available: ${item.stock}`}</p>
           
           <div className="actions">
-            <button className="btn-primary btn-large" onClick={() => addToCart(item)} disabled={outOfStock} aria-disabled={outOfStock}>{outOfStock ? 'Out of stock' : 'Add to Cart'}</button>
+            <button className="btn-primary btn-large" onClick={handleAddToCart} disabled={outOfStock || addingToCart} aria-disabled={outOfStock || addingToCart}>
+              {addingToCart ? 'Adding...' : outOfStock ? 'Out of stock' : 'Add to Cart'}
+            </button>
             <button className="btn-secondary" onClick={() => setShowRatingForm(!showRatingForm)}>
               {showRatingForm ? 'Hide Rating Form' : 'Rate'}
             </button>

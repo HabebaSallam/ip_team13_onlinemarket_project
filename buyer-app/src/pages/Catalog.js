@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { itemsAPI, categoriesAPI } from '../api';
+import { itemsAPI, categoriesAPI, cartAPI } from '../api';
 import { useToast } from '../context/ToastContext';
 import './Catalog.css';
 
-function Catalog({ addToCart }) {
+function Catalog({ addToCart: addToCartFromParent }) {
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [itemsToShow, setItemsToShow] = useState(10);
+  const [addingItemId, setAddingItemId] = useState(null);
   const [filters, setFilters] = useState({
     search: '',
     category: '',
@@ -49,9 +50,22 @@ function Catalog({ addToCart }) {
     setFilters(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleAddToCart = (item) => {
-    addToCart(item);
-    showSuccess('Item added to cart!');
+  const handleAddToCart = async (item) => {
+    setAddingItemId(item._id);
+    try {
+      const response = await cartAPI.addToCart(item._id, 1);
+      showSuccess('Item added to cart!');
+      // Call parent addToCart to sync state if needed
+      if (addToCartFromParent) {
+        addToCartFromParent(item);
+      }
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
+      showError(errorMessage);
+      console.error('Error adding to cart:', err);
+    } finally {
+      setAddingItemId(null);
+    }
   };
 
   const handleCategoryClick = (category) => {
@@ -201,10 +215,10 @@ function Catalog({ addToCart }) {
                       <button 
                         className="btn-secondary" 
                         onClick={() => handleAddToCart(item)}
-                        disabled={outOfStock}
-                        aria-disabled={outOfStock}
+                        disabled={outOfStock || addingItemId === item._id}
+                        aria-disabled={outOfStock || addingItemId === item._id}
                       >
-                        {outOfStock ? 'Out of stock' : 'Add to Cart'}
+                        {addingItemId === item._id ? 'Adding...' : outOfStock ? 'Out of stock' : 'Add to Cart'}
                       </button>
                     </div>
                   </div>

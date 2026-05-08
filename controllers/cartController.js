@@ -1,5 +1,22 @@
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
+const BuyerLocation = require('../models/BuyerLocation');
+const DeliveryZone = require('../models/DeliveryZone');
+
+// Calculate distance between two coordinates using Haversine formula (in km)
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // Earth's radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
 
 // @desc    Get user cart
 // @route   GET /api/cart
@@ -41,8 +58,39 @@ exports.addToCart = async (req, res) => {
     }
 
     // Check inventory
-    if (product.inventory < quantity) {
+    if (product.stock < quantity) {
       return res.status(400).json({ error: 'Not enough inventory' });
+    }
+
+    // Check serviceability
+    const buyerLocation = await BuyerLocation.findOne({ buyerId: req.user.id });
+    if (!buyerLocation) {
+      return res.status(400).json({
+        error: 'Location required',
+        message: 'Please enable location services to add items to cart',
+      });
+    }
+
+    // Check if seller has delivery zones
+    const zones = await DeliveryZone.find({ sellerId: product.sellerId, isActive: true });
+    if (zones.length > 0) {
+      // Check if buyer is within any zone
+      const isServiceable = zones.some((zone) => {
+        const distance = calculateDistance(
+          buyerLocation.latitude,
+          buyerLocation.longitude,
+          zone.latitude,
+          zone.longitude
+        );
+        return distance <= zone.radius;
+      });
+
+      if (!isServiceable) {
+        return res.status(400).json({
+          error: 'Out of delivery zone',
+          message: `This seller does not deliver to your location`,
+        });
+      }
     }
 
     let cart = await Cart.findOne({ user: req.user.id });
@@ -64,7 +112,7 @@ exports.addToCart = async (req, res) => {
     }
 
     await cart.save();
-    await cart.populate('items.product', 'name price image');
+    await cart.populate('items.product', 'name price image stock');
 
     res.status(200).json({
       success: true,

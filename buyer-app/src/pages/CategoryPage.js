@@ -1,15 +1,16 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { itemsAPI } from '../api';
+import { itemsAPI, cartAPI } from '../api';
 import { useToast } from '../context/ToastContext';
 import './Catalog.css';
 
-function CategoryPage({ addToCart }) {
+function CategoryPage({ addToCart: addToCartFromParent }) {
   const { categoryName } = useParams();
   const navigate = useNavigate();
   const { showError, showSuccess } = useToast();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [addingItemId, setAddingItemId] = useState(null);
 
   const getSellerName = (item) => {
     if (!item?.sellerId) return 'Unknown seller';
@@ -47,9 +48,22 @@ function CategoryPage({ addToCart }) {
     fetchCategoryItems();
   }, [fetchCategoryItems]);
 
-  const handleAddToCart = (item) => {
-    addToCart(item);
-    showSuccess('Item added to cart!');
+  const handleAddToCart = async (item) => {
+    setAddingItemId(item._id);
+    try {
+      const response = await cartAPI.addToCart(item._id, 1);
+      showSuccess('Item added to cart!');
+      // Call parent addToCart to sync state if needed
+      if (addToCartFromParent) {
+        addToCartFromParent(item);
+      }
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
+      showError(errorMessage);
+      console.error('Error adding to cart:', err);
+    } finally {
+      setAddingItemId(null);
+    }
   };
 
   if (loading) return <div className="loading">Loading...</div>;
@@ -115,7 +129,7 @@ function CategoryPage({ addToCart }) {
                 <div className="product-delivery">Delivery: {item.deliveryTimeEstimate || 'TBD'} days</div>
                 <div className="product-actions">
                   <button className="btn-primary" onClick={() => navigate(`/product/${item._id}`)}>View</button>
-                  <button className="btn-secondary" onClick={() => handleAddToCart(item)} disabled={outOfStock} aria-disabled={outOfStock}>{outOfStock ? 'Out of stock' : 'Add to Cart'}</button>
+                  <button className="btn-secondary" onClick={() => handleAddToCart(item)} disabled={outOfStock || addingItemId === item._id} aria-disabled={outOfStock || addingItemId === item._id}>{addingItemId === item._id ? 'Adding...' : outOfStock ? 'Out of stock' : 'Add to Cart'}</button>
                 </div>
               </div>
             </div>

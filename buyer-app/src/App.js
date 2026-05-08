@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 import { ToastProvider } from './context/ToastContext';
-import { cartAPI } from './api';
+import { cartAPI, serviceabilityAPI } from './api';
 
 // Pages
 import Login from './pages/Login';
@@ -18,10 +18,13 @@ import Checkout from './pages/Checkout';
 
 // Components
 import Navbar from './components/Navbar';
+import { LocationSetup } from './components/LocationSetup';
+import { useToast } from './context/ToastContext';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showLocationSetup, setShowLocationSetup] = useState(false);
   const [cart, setCart] = useState(() => {
     const saved = localStorage.getItem('cart');
     return saved ? JSON.parse(saved) : [];
@@ -31,9 +34,23 @@ function App() {
     const token = localStorage.getItem('token');
     if (token) {
       setIsAuthenticated(true);
+      // Check if user has location set, if not show setup
+      checkLocationStatus();
     }
     setLoading(false);
   }, []);
+
+  const checkLocationStatus = async () => {
+    try {
+      const res = await serviceabilityAPI.getLocation();
+      if (!res.data.location) {
+        setShowLocationSetup(true);
+      }
+    } catch (err) {
+      // If location not found, show setup
+      setShowLocationSetup(true);
+    }
+  };
 
   useEffect(() => {
     const syncCartFromServer = async () => {
@@ -160,6 +177,12 @@ function App() {
   return (
     <ToastProvider>
       <Router>
+        {showLocationSetup && isAuthenticated && (
+          <LocationSetup
+            onLocationReady={() => setShowLocationSetup(false)}
+            onClose={() => setShowLocationSetup(false)}
+          />
+        )}
         {isAuthenticated && <Navbar cartCount={cart.length} onLogout={handleLogout} />}
         <Routes>
           {!isAuthenticated ? (
