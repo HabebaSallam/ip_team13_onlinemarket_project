@@ -176,7 +176,7 @@ function App() {
               <Route path="/cart" element={<Cart cart={cart} removeFromCart={removeFromCart} updateQuantity={updateCartQuantity} clearCart={clearCart} />} />
               <Route path="/orders" element={<MyOrders />} />
               <Route path="/orders/:id" element={<OrderDetail />} />
-              <Route path="/checkout/:id" element={<Checkout />} />
+              <Route path="/checkout/:id" element={<Checkout clearCart={clearCart} />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="*" element={<Navigate to="/" />} />
             </>

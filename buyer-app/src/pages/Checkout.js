@@ -5,7 +5,7 @@ import { useToast } from '../context/ToastContext';
 import { groupItemsBySeller } from '../utils/orderView';
 import './Cart.css';
 
-function Checkout() {
+function Checkout({ clearCart }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const { showError, showSuccess } = useToast();
@@ -79,6 +79,10 @@ function Checkout() {
         showSuccess('Card payment successful');
       } else {
         showSuccess('Cash on delivery selected. Order sent to seller successfully.');
+      }
+
+      if (typeof clearCart === 'function') {
+        await clearCart();
       }
 
       setTimeout(() => navigate(`/orders/${updatedOrder._id}`), 1000);
