@@ -13,7 +13,7 @@ function Navbar({ cartCount, onLogout }) {
   return (
     <nav className="navbar">
       <div className="navbar-container">
-        <Link to="/" className="navbar-logo">🛍️ Marketplace</Link>
+        <Link to="/" className="navbar-logo">🏪 Marketplace (Buyer)</Link>
         
         <ul className="navbar-menu">
           <li><Link to="/">Shop</Link></li>
