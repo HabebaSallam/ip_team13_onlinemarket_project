@@ -34,23 +34,34 @@ function App() {
     const token = localStorage.getItem('token');
     if (token) {
       setIsAuthenticated(true);
-      // Check if user has location set, if not show setup
-      checkLocationStatus();
     }
     setLoading(false);
   }, []);
 
-  const checkLocationStatus = async () => {
-    try {
-      const res = await serviceabilityAPI.getLocation();
-      if (!res.data.location) {
-        setShowLocationSetup(true);
+  // Run whenever the user becomes authenticated (including after login/register),
+  // not only on first page load — otherwise buyer location is never checked and
+  // delivery zone serviceability fails with "Buyer location not found".
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    let cancelled = false;
+
+    const checkLocationStatus = async () => {
+      try {
+        const res = await serviceabilityAPI.getLocation();
+        if (!cancelled && !res.data.location) {
+          setShowLocationSetup(true);
+        }
+      } catch {
+        if (!cancelled) setShowLocationSetup(true);
       }
-    } catch (err) {
-      // If location not found, show setup
-      setShowLocationSetup(true);
-    }
-  };
+    };
+
+    checkLocationStatus();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const syncCartFromServer = async () => {
@@ -86,6 +97,7 @@ function App() {
     localStorage.removeItem('user');
     localStorage.removeItem('cart');
     setIsAuthenticated(false);
+    setShowLocationSetup(false);
     setCart([]);
   };
 
@@ -104,13 +116,9 @@ function App() {
       setCart(normalizedCart);
     } catch (error) {
       console.error('Failed to add item to cart:', error);
-      setCart(prev => {
-        const existing = prev.find(c => c._id === item._id);
-        if (existing) {
-          return prev.map(c => c._id === item._id ? { ...c, quantity: c.quantity + 1 } : c);
-        }
-        return [...prev, { ...item, quantity: 1 }];
-      });
+      // Do not merge into local cart on failure — the API rejects out-of-zone,
+      // missing location, etc., and swallowing the error showed a false "added" toast.
+      throw error;
     }
   };
 
@@ -151,11 +159,7 @@ function App() {
       setCart(normalizedCart);
     } catch (error) {
       console.error('Failed to update cart quantity:', error);
-      if (quantity === 0) {
-        setCart(prev => prev.filter(c => c._id !== itemId));
-      } else {
-        setCart(prev => prev.map(c => c._id === itemId ? { ...c, quantity } : c));
-      }
+      throw error;
     }
   };
 

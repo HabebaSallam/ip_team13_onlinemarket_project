@@ -18,6 +18,43 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
   return R * c;
 };
 
+/** Returns true if buyer may order this seller's products at their current location */
+async function assertBuyerServiceableForSeller(buyerId, sellerId) {
+  const buyerLocation = await BuyerLocation.findOne({ buyerId });
+  if (!buyerLocation) {
+    const err = new Error('LOCATION_REQUIRED');
+    err.statusCode = 400;
+    err.payload = {
+      error: 'Location required',
+      message: 'Please enable location services to add items to cart',
+    };
+    throw err;
+  }
+
+  const zones = await DeliveryZone.find({ sellerId, isActive: true });
+  if (zones.length === 0) return;
+
+  const isServiceable = zones.some((zone) => {
+    const distance = calculateDistance(
+      buyerLocation.latitude,
+      buyerLocation.longitude,
+      zone.latitude,
+      zone.longitude
+    );
+    return distance <= zone.radius;
+  });
+
+  if (!isServiceable) {
+    const err = new Error('OUT_OF_ZONE');
+    err.statusCode = 400;
+    err.payload = {
+      error: 'Out of delivery zone',
+      message: 'This seller does not deliver to your location',
+    };
+    throw err;
+  }
+}
+
 // @desc    Get user cart
 // @route   GET /api/cart
 exports.getCart = async (req, res) => {
@@ -62,35 +99,13 @@ exports.addToCart = async (req, res) => {
       return res.status(400).json({ error: 'Not enough inventory' });
     }
 
-    // Check serviceability
-    const buyerLocation = await BuyerLocation.findOne({ buyerId: req.user.id });
-    if (!buyerLocation) {
-      return res.status(400).json({
-        error: 'Location required',
-        message: 'Please enable location services to add items to cart',
-      });
-    }
-
-    // Check if seller has delivery zones
-    const zones = await DeliveryZone.find({ sellerId: product.sellerId, isActive: true });
-    if (zones.length > 0) {
-      // Check if buyer is within any zone
-      const isServiceable = zones.some((zone) => {
-        const distance = calculateDistance(
-          buyerLocation.latitude,
-          buyerLocation.longitude,
-          zone.latitude,
-          zone.longitude
-        );
-        return distance <= zone.radius;
-      });
-
-      if (!isServiceable) {
-        return res.status(400).json({
-          error: 'Out of delivery zone',
-          message: `This seller does not deliver to your location`,
-        });
+    try {
+      await assertBuyerServiceableForSeller(req.user.id, product.sellerId);
+    } catch (e) {
+      if (e.statusCode && e.payload) {
+        return res.status(e.statusCode).json(e.payload);
       }
+      throw e;
     }
 
     let cart = await Cart.findOne({ user: req.user.id });
@@ -178,6 +193,21 @@ exports.updateCartItem = async (req, res) => {
     if (quantity <= 0) {
       cart.items = cart.items.filter((item) => item.product.toString() !== productId);
     } else {
+      const product = await Product.findById(productId);
+      if (!product) {
+        return res.status(404).json({ error: 'Product not found' });
+      }
+      if (product.stock < quantity) {
+        return res.status(400).json({ error: 'Not enough inventory' });
+      }
+      try {
+        await assertBuyerServiceableForSeller(req.user.id, product.sellerId);
+      } catch (e) {
+        if (e.statusCode && e.payload) {
+          return res.status(e.statusCode).json(e.payload);
+        }
+        throw e;
+      }
       cartItem.quantity = quantity;
     }
 
