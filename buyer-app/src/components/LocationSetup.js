@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { getBuyerLocation, reverseGeocode } from '../utils/location';
 import { serviceabilityAPI } from '../api';
 import { useToast } from '../context/ToastContext';
@@ -8,12 +8,7 @@ export const LocationSetup = ({ onLocationReady, onClose }) => {
   const [locationRequested, setLocationRequested] = useState(false);
   const { showError, showSuccess } = useToast();
 
-  useEffect(() => {
-    // Auto-request location on component mount
-    requestLocation();
-  }, []);
-
-  const requestLocation = async () => {
+  const requestLocation = useCallback(async () => {
     setLoading(true);
     setLocationRequested(true);
     try {
@@ -49,7 +44,11 @@ export const LocationSetup = ({ onLocationReady, onClose }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [onClose, onLocationReady, showError, showSuccess]);
+
+  useEffect(() => {
+    requestLocation();
+  }, [requestLocation]);
 
   return (
     <div style={styles.overlay}>

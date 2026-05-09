@@ -1,6 +1,22 @@
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const User = require('../models/User');
+const BuyerLocation = require('../models/BuyerLocation');
+const DeliveryZone = require('../models/DeliveryZone');
+
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
 
 const populateOrderProducts = () => ({
   path: 'items.product',
@@ -55,6 +71,48 @@ const userOwnsOrderAsSeller = (order, sellerId) => {
   });
 };
 
+const ensureOrderServiceability = async (buyerId, items) => {
+  const buyerLocation = await BuyerLocation.findOne({ buyerId });
+  if (!buyerLocation) {
+    return { ok: false, status: 400, error: 'Location required', message: 'Please enable location services to place an order' };
+  }
+
+  for (const item of items) {
+    const productId = item.product || item.itemId;
+    const product = await Product.findById(productId).select('sellerId name');
+
+    if (!product) {
+      return { ok: false, status: 404, error: 'Product not found', message: `Product ${productId} not found` };
+    }
+
+    const zones = await DeliveryZone.find({ sellerId: product.sellerId, isActive: true });
+    if (zones.length === 0) {
+      continue;
+    }
+
+    const isServiceable = zones.some((zone) => {
+      const distance = calculateDistance(
+        buyerLocation.latitude,
+        buyerLocation.longitude,
+        zone.latitude,
+        zone.longitude
+      );
+      return distance <= zone.radius;
+    });
+
+    if (!isServiceable) {
+      return {
+        ok: false,
+        status: 400,
+        error: 'Out of delivery zone',
+        message: `This seller does not deliver to your location`,
+      };
+    }
+  }
+
+  return { ok: true };
+};
+
 // @desc    Create order
 // @route   POST /api/orders
 exports.createOrder = async (req, res) => {
@@ -64,6 +122,11 @@ exports.createOrder = async (req, res) => {
 
     if (!items || items.length === 0) {
       return res.status(400).json({ error: 'Please provide order items' });
+    }
+
+    const serviceability = await ensureOrderServiceability(req.user.id, items);
+    if (!serviceability.ok) {
+      return res.status(serviceability.status).json({ error: serviceability.error, message: serviceability.message });
     }
 
     let totalPrice = 0;
