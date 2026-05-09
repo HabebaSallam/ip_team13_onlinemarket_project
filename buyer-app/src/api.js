@@ -46,6 +46,7 @@ export const ordersAPI = {
   getBuyerOrders: () => api.get('/orders/buyer/my-orders'),
   getOrder: (id) => api.get(`/orders/${id}`),
   addComment: (id, text) => api.post(`/orders/${id}/comments`, { text }),
+  cancelOrder: (id) => api.delete(`/orders/${id}`),
 };
 
 // Payments endpoints (mock)

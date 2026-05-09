@@ -1,12 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { ordersAPI } from '../api';
 import { groupItemsBySeller } from '../utils/orderView';
+import { useToast } from '../context/ToastContext';
 
 function OrderDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { showError, showSuccess } = useToast();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [cancelling, setCancelling] = useState(false);
   const [comment, setComment] = useState('');
 
   const fetchOrder = useCallback(async () => {
@@ -32,6 +36,23 @@ function OrderDetail() {
       fetchOrder();
     } catch (err) {
       console.error('Error adding comment:', err);
+      showError(err.response?.data?.error || 'Failed to add comment');
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    if (!window.confirm('Are you sure you want to cancel this order? This action cannot be undone.')) {
+      return;
+    }
+
+    setCancelling(true);
+    try {
+      await ordersAPI.cancelOrder(id);
+      showSuccess('Order cancelled successfully');
+      setTimeout(() => navigate('/orders'), 1500);
+    } catch (err) {
+      showError(err.response?.data?.error || 'Failed to cancel order');
+      setCancelling(false);
     }
   };
 
@@ -46,7 +67,19 @@ function OrderDetail() {
       <div className="page-title">Order Details</div>
       
       <div className="card">
-        <h2>Order: {order.orderNumber}</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h2 style={{ margin: 0 }}>Order: {order.orderNumber}</h2>
+          {order.status === 'pending' && (
+            <button 
+              onClick={handleCancelOrder} 
+              disabled={cancelling}
+              className="btn-danger"
+              style={{ padding: '8px 16px' }}
+            >
+              {cancelling ? 'Cancelling...' : 'Cancel Order'}
+            </button>
+          )}
+        </div>
         <p><strong>Status:</strong> <span className={`status status-${order.status}`}>{order.status}</span></p>
         <p><strong>Payment Method:</strong> {order.paymentMethod || 'cash'}</p>
         <p><strong>Payment Status:</strong> {order.paymentStatus}</p>
@@ -66,6 +99,8 @@ function OrderDetail() {
           const ed = order?.estimatedDeliveryDate ? new Date(order.estimatedDeliveryDate) : null;
           return ed && !isNaN(ed) ? ed.toLocaleDateString() : 'Not set';
         })()}</p>
+        
+        <hr style={{ margin: '16px 0', borderColor: '#ccc' }} />
         
         <h3>Items</h3>
         {sellerGroups.map((group) => (

@@ -5,20 +5,43 @@ const Category = require('../models/Category');
 
 const router = express.Router();
 
+const resolveCategoryId = async (categoryValue) => {
+  if (!categoryValue) return null;
+
+  const categoryText = String(categoryValue);
+
+  if (categoryText.match(/^[0-9a-fA-F]{24}$/)) {
+    const existingCategory = await Category.findById(categoryText);
+    return existingCategory ? existingCategory._id : null;
+  }
+
+  const category = await Category.findOneAndUpdate(
+    { name: categoryText },
+    { name: categoryText },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+
+  return category._id;
+};
+
 // Get all items with filters
 router.get('/', async (req, res) => {
   try {
     const { category, minPrice, maxPrice, search } = req.query;
     let filter = {};
-    
-    if (category) filter.category = category;
+
+    if (category) {
+      const categoryId = await resolveCategoryId(category);
+      if (categoryId) filter.category = categoryId;
+    }
     if (minPrice) filter.price = { ...filter.price, $gte: parseFloat(minPrice) };
     if (maxPrice) filter.price = { ...filter.price, $lte: parseFloat(maxPrice) };
     if (search) filter.name = { $regex: search, $options: 'i' };
       if (req.query.sellerId) filter.sellerId = req.query.sellerId;
     
     const items = await Product.find(filter)
-      .populate('sellerId', 'name businessName');
+      .populate('sellerId', 'name businessName')
+      .populate('category', 'name');
     res.json(items);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching items', error: error.message });
@@ -28,7 +51,7 @@ router.get('/', async (req, res) => {
 // Get all categories
 router.get('/categories/all', async (req, res) => {
   try {
-    const categories = await Product.distinct('category');
+    const categories = await Category.find().sort({ name: 1 });
     res.json(categories);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching categories', error: error.message });
@@ -57,30 +80,20 @@ router.post('/', protect, async (req, res) => {
     if (!name || !description || !category || !price || stock === undefined) {
       return res.status(400).json({ error: 'Missing required fields: name, description, category, price, stock' });
     }
+    const categoryId = await resolveCategoryId(category);
+    if (!categoryId) {
+      return res.status(400).json({ error: 'Invalid category' });
+    }
     const item = await Product.create({
       name,
       description,
-      category,
+      category: categoryId,
       price: parseFloat(price),
       stock: parseInt(stock),
       deliveryTimeEstimate: parseInt(deliveryTimeEstimate) || 1,
       images: images || [],
       sellerId: req.user.id,
     });
-
-    // Ensure category exists in Category collection (upsert)
-    if (category) {
-      try {
-        await Category.findOneAndUpdate(
-          { name: category },
-          { name: category },
-          { upsert: true, new: true, setDefaultsOnInsert: true }
-        );
-      } catch (catErr) {
-        // log but don't block item creation
-        console.error('Category upsert error:', catErr.message);
-      }
-    }
     
     res.status(201).json(item);
   } catch (error) {
@@ -97,21 +110,15 @@ router.put('/:id', protect, async (req, res) => {
     }
     const oldCategory = item.category;
 
-    item = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
-
-    // If category changed, ensure new category exists in Category collection
-    const newCategory = item.category;
-    if (newCategory && newCategory !== oldCategory) {
-      try {
-        await Category.findOneAndUpdate(
-          { name: newCategory },
-          { name: newCategory },
-          { upsert: true, new: true, setDefaultsOnInsert: true }
-        );
-      } catch (catErr) {
-        console.error('Category upsert error:', catErr.message);
+    if (req.body.category) {
+      const categoryId = await resolveCategoryId(req.body.category);
+      if (!categoryId) {
+        return res.status(400).json({ error: 'Invalid category' });
       }
+      req.body.category = categoryId;
     }
+
+    item = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(item);
   } catch (error) {
     res.status(500).json({ message: 'Error updating item', error: error.message });
