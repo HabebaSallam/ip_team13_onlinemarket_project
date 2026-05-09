@@ -1,4 +1,24 @@
 const Product = require('../models/Product');
+const Category = require('../models/Category');
+
+const resolveCategoryId = async (categoryValue) => {
+  if (!categoryValue) return null;
+
+  const categoryText = String(categoryValue);
+
+  if (categoryText.match(/^[0-9a-fA-F]{24}$/)) {
+    const existingCategory = await Category.findById(categoryText);
+    return existingCategory ? existingCategory._id : null;
+  }
+
+  const category = await Category.findOneAndUpdate(
+    { name: categoryText },
+    { name: categoryText },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+
+  return category._id;
+};
 
 // @desc    Get all products
 // @route   GET /api/products
@@ -9,7 +29,10 @@ exports.getProducts = async (req, res) => {
     let filter = {};
 
     if (category) {
-      filter.category = category;
+      const categoryId = await resolveCategoryId(category);
+      if (categoryId) {
+        filter.category = categoryId;
+      }
     }
 
     if (search) {
@@ -75,11 +98,17 @@ exports.createProduct = async (req, res) => {
       return res.status(400).json({ error: 'Please provide all required fields' });
     }
 
+    const categoryId = await resolveCategoryId(category);
+
+    if (!categoryId) {
+      return res.status(400).json({ error: 'Please provide a valid category' });
+    }
+
     const product = await Product.create({
       name,
       description,
       price,
-      category,
+      category: categoryId,
       inventory: inventory || 0,
       image,
       seller: req.user.id,
@@ -107,6 +136,14 @@ exports.updateProduct = async (req, res) => {
     // Check if user is the seller
     if (product.seller.toString() !== req.user.id) {
       return res.status(403).json({ error: 'Not authorized to update this product' });
+    }
+
+    if (req.body.category) {
+      const categoryId = await resolveCategoryId(req.body.category);
+      if (!categoryId) {
+        return res.status(400).json({ error: 'Please provide a valid category' });
+      }
+      req.body.category = categoryId;
     }
 
     product = await Product.findByIdAndUpdate(req.params.id, req.body, {
