@@ -14,7 +14,7 @@ function Navbar({ onLogout }) {
   return (
     <nav className="navbar">
       <div className="navbar-container">
-        <Link to="/" className="navbar-logo">📦 Seller Hub</Link>
+        <Link to="/" className="navbar-logo">Marketplace (Seller)</Link>
         
         <ul className="navbar-menu">
           <li><Link to="/">Dashboard</Link></li>
