@@ -18,21 +18,13 @@ router.get('/profile', protect, async (req, res) => {
 // Update seller profile
 router.put('/profile', protect, async (req, res) => {
   try {
-    const { phone, address, city, state, zipCode, businessName, serviceArea } = req.body;
+    const { phone, businessName } = req.body;
+    const updateData = {};
     
-    const seller = await User.findByIdAndUpdate(
-      req.user.id,
-      {
-        phone,
-        address,
-        city,
-        state,
-        zipCode,
-        businessName,
-        serviceArea,
-      },
-      { new: true }
-    ).select('-password');
+    if (phone !== undefined) updateData.phone = phone;
+    if (businessName !== undefined) updateData.businessName = businessName;
+
+    const seller = await User.findByIdAndUpdate(req.user.id, updateData, { new: true }).select('-password');
     
     res.json({
       message: 'Profile updated successfully',

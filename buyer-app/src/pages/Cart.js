@@ -245,7 +245,14 @@ function Cart({ cart, removeFromCart, updateQuantity }) {
                       type="number" 
                       min="1" 
                       value={item.quantity}
-                      onChange={(e) => updateQuantity(item._id, parseInt(e.target.value) || 1)}
+                      onChange={async (e) => {
+                        const qty = parseInt(e.target.value, 10) || 1;
+                        try {
+                          await updateQuantity(item._id, qty);
+                        } catch (err) {
+                          showError(err.response?.data?.error || err.response?.data?.message || 'Could not update quantity');
+                        }
+                      }}
                       style={{ width: '50px' }}
                     />
                   </td>

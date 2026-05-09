@@ -28,10 +28,6 @@ const userSchema = new mongoose.Schema(
       default: 'customer',
     },
     phone: String,
-    address: String,
-    city: String,
-    state: String,
-    zipCode: String,
     businessName: String,
     serviceArea: String,
     rating: {
@@ -50,6 +46,26 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    addresses: [{
+      _id: mongoose.Schema.Types.ObjectId,
+      recipientName: String,
+      phone: String,
+      street: String,
+      apartment: String,
+      city: String,
+      state: String,
+      zipCode: String,
+      landmark: String,
+      notes: String,
+      isDefault: {
+        type: Boolean,
+        default: false,
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now,
+      },
+    }],
     createdAt: {
       type: Date,
       default: Date.now,
