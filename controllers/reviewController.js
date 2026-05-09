@@ -74,7 +74,7 @@ exports.createReview = async (req, res) => {
 };
 
 // @desc    Delete review
-// @route   DELETE /api/reviews/:id
+// @route   DELETE /api/products/reviews/:id
 exports.deleteReview = async (req, res) => {
   try {
     const review = await Review.findById(req.params.id);

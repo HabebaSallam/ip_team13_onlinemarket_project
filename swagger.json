@@ -879,37 +879,6 @@
         "responses": { "201": { "description": "Rating created" }, "400": { "description": "Validation error" }, "401": { "description": "Unauthorized" } }
       }
     },
-    "/reviews/item/{itemId}": {
-      "get": {
-        "tags": ["Reviews"],
-        "summary": "Get reviews for an item",
-        "parameters": [{ "name": "itemId", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "responses": { "200": { "description": "Reviews list" } }
-      }
-    },
-    "/reviews": {
-      "post": {
-        "tags": ["Reviews"],
-        "summary": "Create a review",
-        "security": [{ "bearerAuth": [] }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["itemId", "rating"],
-                "properties": {
-                  "itemId": { "type": "string" },
-                  "rating": { "type": "integer", "minimum": 1, "maximum": 5, "example": 5 }
-                }
-              }
-            }
-          }
-        },
-        "responses": { "201": { "description": "Review created" }, "400": { "description": "Validation error" }, "401": { "description": "Unauthorized" } }
-      }
-    },
     "/comments/item/{id}": {
       "get": {
         "tags": ["Comments"],
