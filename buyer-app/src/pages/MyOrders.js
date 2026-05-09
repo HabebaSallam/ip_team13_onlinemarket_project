@@ -8,8 +8,9 @@ import './MyOrders.css';
 function MyOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [cancelling, setCancelling] = useState(null);
   const navigate = useNavigate();
-  const { showError } = useToast();
+  const { showError, showSuccess } = useToast();
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -25,6 +26,25 @@ function MyOrders() {
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
+
+  const handleCancelOrder = async (e, orderId) => {
+    e.stopPropagation();
+    
+    if (!window.confirm('Are you sure you want to cancel this order? This action cannot be undone.')) {
+      return;
+    }
+
+    setCancelling(orderId);
+    try {
+      await ordersAPI.cancelOrder(orderId);
+      showSuccess('Order cancelled successfully');
+      fetchOrders(); // Refresh the orders list
+    } catch (err) {
+      showError(err.response?.data?.error || 'Failed to cancel order');
+    } finally {
+      setCancelling(null);
+    }
+  };
 
   if (loading) return <div className="loading">Loading...</div>;
 
@@ -48,6 +68,7 @@ function MyOrders() {
               <th>Status</th>
               <th>Estimated Arrival</th>
               <th>Date</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -63,6 +84,18 @@ function MyOrders() {
                   return arrivalDate && !isNaN(arrivalDate) ? arrivalDate.toLocaleDateString() : 'Not set';
                 })()}</td>
                 <td>{order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A'}</td>
+                <td onClick={(e) => e.stopPropagation()}>
+                  {order.status === 'pending' && (
+                    <button 
+                      onClick={(e) => handleCancelOrder(e, order._id)}
+                      disabled={cancelling === order._id}
+                      className="btn-danger"
+                      style={{ fontSize: '12px', padding: '6px 10px' }}
+                    >
+                      {cancelling === order._id ? 'Cancelling...' : 'Cancel'}
+                    </button>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
