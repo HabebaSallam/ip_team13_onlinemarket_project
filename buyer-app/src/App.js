@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 import { ToastProvider } from './context/ToastContext';
-import { cartAPI, serviceabilityAPI } from './api';
+import { cartAPI } from './api';
 
 // Pages
 import Login from './pages/Login';
@@ -19,7 +19,6 @@ import Checkout from './pages/Checkout';
 // Components
 import Navbar from './components/Navbar';
 import { LocationSetup } from './components/LocationSetup';
-import { useToast } from './context/ToastContext';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -38,29 +37,10 @@ function App() {
     setLoading(false);
   }, []);
 
-  // Run whenever the user becomes authenticated (including after login/register),
-  // not only on first page load — otherwise buyer location is never checked and
-  // delivery zone serviceability fails with "Buyer location not found".
   useEffect(() => {
-    if (!isAuthenticated) return;
-
-    let cancelled = false;
-
-    const checkLocationStatus = async () => {
-      try {
-        const res = await serviceabilityAPI.getLocation();
-        if (!cancelled && !res.data.location) {
-          setShowLocationSetup(true);
-        }
-      } catch {
-        if (!cancelled) setShowLocationSetup(true);
-      }
-    };
-
-    checkLocationStatus();
-    return () => {
-      cancelled = true;
-    };
+    if (isAuthenticated) {
+      setShowLocationSetup(true);
+    }
   }, [isAuthenticated]);
 
   useEffect(() => {
@@ -97,29 +77,22 @@ function App() {
     localStorage.removeItem('user');
     localStorage.removeItem('cart');
     setIsAuthenticated(false);
-    setShowLocationSetup(false);
     setCart([]);
   };
 
-  const addToCart = async (item) => {
-    try {
-      const res = await cartAPI.addToCart(item._id, 1);
-      const serverCart = res.data.cart;
-      const normalizedCart = (serverCart?.items || []).map((cartItem) => ({
-        _id: cartItem.product?._id,
-        name: cartItem.product?.name,
-        price: cartItem.product?.price,
-        category: cartItem.product?.category,
-        images: cartItem.product?.images,
-        quantity: cartItem.quantity,
-      })).filter(cartItem => cartItem._id);
-      setCart(normalizedCart);
-    } catch (error) {
-      console.error('Failed to add item to cart:', error);
-      // Do not merge into local cart on failure — the API rejects out-of-zone,
-      // missing location, etc., and swallowing the error showed a false "added" toast.
-      throw error;
-    }
+  const addToCart = async (item, serverCart = null) => {
+    if (!serverCart) return;
+
+    const normalizedCart = (serverCart.items || []).map((cartItem) => ({
+      _id: cartItem.product?._id,
+      name: cartItem.product?.name,
+      price: cartItem.product?.price,
+      category: cartItem.product?.category,
+      images: cartItem.product?.images,
+      quantity: cartItem.quantity,
+    })).filter(cartItem => cartItem._id);
+
+    setCart(normalizedCart);
   };
 
   const removeFromCart = async (itemId) => {
@@ -159,7 +132,11 @@ function App() {
       setCart(normalizedCart);
     } catch (error) {
       console.error('Failed to update cart quantity:', error);
-      throw error;
+      if (quantity === 0) {
+        setCart(prev => prev.filter(c => c._id !== itemId));
+      } else {
+        setCart(prev => prev.map(c => c._id === itemId ? { ...c, quantity } : c));
+      }
     }
   };
 
