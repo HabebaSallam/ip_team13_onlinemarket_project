@@ -39,6 +39,7 @@ function OrderDetail() {
   if (!order) return <div className="container">Order not found</div>;
 
   const sellerGroups = groupItemsBySeller(order.items);
+  const shippingAddress = order.shippingAddress || {};
 
   return (
     <div className="container">
@@ -50,7 +51,17 @@ function OrderDetail() {
         <p><strong>Payment Method:</strong> {order.paymentMethod || 'cash'}</p>
         <p><strong>Payment Status:</strong> {order.paymentStatus}</p>
         <p><strong>Total:</strong> ${Number(order.totalPrice || 0).toFixed(2)}</p>
-        <p><strong>Delivery Address:</strong> {order.shippingAddress?.street}, {order.shippingAddress?.city}</p>
+        <div style={{ margin: '12px 0' }}>
+          <p><strong>Delivery Address:</strong></p>
+          <p>{shippingAddress.recipientName || 'Recipient not set'}</p>
+          <p>{shippingAddress.phone || 'Phone not set'}</p>
+          <p>{shippingAddress.street || 'Street not set'}</p>
+          {shippingAddress.addressLine2 && <p>{shippingAddress.addressLine2}</p>}
+          {shippingAddress.apartment && <p>{shippingAddress.apartment}</p>}
+          <p>{[shippingAddress.city, shippingAddress.state, shippingAddress.zipCode].filter(Boolean).join(', ')}</p>
+          {shippingAddress.landmark && <p>{shippingAddress.landmark}</p>}
+          {shippingAddress.notes && <p>{shippingAddress.notes}</p>}
+        </div>
         <p><strong>Estimated Delivery:</strong> {(() => {
           const ed = order?.estimatedDeliveryDate ? new Date(order.estimatedDeliveryDate) : null;
           return ed && !isNaN(ed) ? ed.toLocaleDateString() : 'Not set';

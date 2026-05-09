@@ -15,7 +15,7 @@ function Profile() {
     try {
       const res = await api.get('/buyers/profile');
       setProfile(res.data);
-      setFormData(res.data);
+      setFormData({ phone: res.data.phone || '' });
     } catch (err) {
       showError(err.response?.data?.message || 'Error fetching profile');
     } finally {
@@ -38,10 +38,6 @@ function Profile() {
   const validateForm = () => {
     const errors = {};
     if (!formData.phone?.trim()) errors.phone = 'Phone number is required';
-    if (!formData.address?.trim()) errors.address = 'Address is required';
-    if (!formData.city?.trim()) errors.city = 'City is required';
-    if (!formData.state?.trim()) errors.state = 'State is required';
-    if (!formData.zipCode?.trim()) errors.zipCode = 'Zip code is required';
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -98,54 +94,6 @@ function Profile() {
               {formErrors.phone && <p className="error-text">{formErrors.phone}</p>}
             </div>
             
-            <div className="form-group">
-              <label>Address <span className="required">*</span></label>
-              <input 
-                type="text" 
-                name="address" 
-                value={formData.address || ''} 
-                onChange={handleChange}
-                placeholder="Street address"
-              />
-              {formErrors.address && <p className="error-text">{formErrors.address}</p>}
-            </div>
-            
-            <div className="form-group">
-              <label>City <span className="required">*</span></label>
-              <input 
-                type="text" 
-                name="city" 
-                value={formData.city || ''} 
-                onChange={handleChange}
-                placeholder="City"
-              />
-              {formErrors.city && <p className="error-text">{formErrors.city}</p>}
-            </div>
-            
-            <div className="form-group">
-              <label>State <span className="required">*</span></label>
-              <input 
-                type="text" 
-                name="state" 
-                value={formData.state || ''} 
-                onChange={handleChange}
-                placeholder="State"
-              />
-              {formErrors.state && <p className="error-text">{formErrors.state}</p>}
-            </div>
-            
-            <div className="form-group">
-              <label>Zip Code <span className="required">*</span></label>
-              <input 
-                type="text" 
-                name="zipCode" 
-                value={formData.zipCode || ''} 
-                onChange={handleChange}
-                placeholder="Zip code"
-              />
-              {formErrors.zipCode && <p className="error-text">{formErrors.zipCode}</p>}
-            </div>
-            
             <button type="submit" className="btn-primary" disabled={submitting}>
               {submitting ? 'Saving...' : 'Save Changes'}
             </button>
@@ -156,8 +104,7 @@ function Profile() {
             <p><strong>Name:</strong> {profile.name || 'N/A'}</p>
             <p><strong>Email:</strong> {profile.email || 'N/A'}</p>
             <p><strong>Phone:</strong> {profile.phone || 'Not set'}</p>
-            <p><strong>Address:</strong> {profile.address && profile.city && profile.state ? `${profile.address}, ${profile.city}, ${profile.state}` : 'Not set'}</p>
-            <p><strong>Zip Code:</strong> {profile.zipCode || 'Not set'}</p>
+            <p><strong>Detected Location:</strong> {profile.detectedLocation ? `${[profile.detectedLocation.address, profile.detectedLocation.city, profile.detectedLocation.state, profile.detectedLocation.zipCode].filter(Boolean).join(', ')}` : 'Not set'}</p>
             <p><strong>Flags Against You:</strong> {profile.buyerFlags || 0}</p>
             
             <button className="btn-primary" onClick={() => setEditing(true)}>Edit Profile</button>
