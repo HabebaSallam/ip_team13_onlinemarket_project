@@ -76,6 +76,10 @@ export const flagsAPI = {
 export const buyersAPI = {
   getProfile: () => api.get('/buyers/profile'),
   updateProfile: (data) => api.put('/buyers/profile', data),
+  getAddresses: () => api.get('/buyers/addresses'),
+  addAddress: (data) => api.post('/buyers/addresses', data),
+  updateAddress: (addressId, data) => api.put(`/buyers/addresses/${addressId}`, data),
+  deleteAddress: (addressId) => api.delete(`/buyers/addresses/${addressId}`),
 };
 
 // Serviceability endpoints

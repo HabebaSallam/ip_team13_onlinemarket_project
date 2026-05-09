@@ -96,6 +96,7 @@ function Checkout({ clearCart }) {
   if (!order) return <div className="loading">Loading order...</div>;
 
   const sellerGroups = groupItemsBySeller(order.items);
+  const shippingAddress = order.shippingAddress || {};
 
   return (
     <div className="container">
@@ -106,6 +107,19 @@ function Checkout({ clearCart }) {
         <p><strong>Total:</strong> ${Number(order.totalPrice || 0).toFixed(2)}</p>
         <p><strong>Payment Status:</strong> {order.paymentStatus}</p>
         <p><strong>Payment Method:</strong> {order.paymentMethod || 'Not selected yet'}</p>
+        <div style={{ marginTop: '16px' }}>
+          <h4>Delivery Address</h4>
+          <p>{shippingAddress.recipientName || 'Recipient not set'}</p>
+          <p>{shippingAddress.phone || 'Phone not set'}</p>
+          <p>{shippingAddress.street || 'Street not set'}</p>
+          {shippingAddress.addressLine2 && <p>{shippingAddress.addressLine2}</p>}
+          {shippingAddress.apartment && <p>{shippingAddress.apartment}</p>}
+          <p>
+            {[shippingAddress.city, shippingAddress.state, shippingAddress.zipCode].filter(Boolean).join(', ')}
+          </p>
+          {shippingAddress.landmark && <p><strong>Landmark:</strong> {shippingAddress.landmark}</p>}
+          {shippingAddress.notes && <p><strong>Notes:</strong> {shippingAddress.notes}</p>}
+        </div>
 
         <h4>Items</h4>
         {sellerGroups.map((group) => (

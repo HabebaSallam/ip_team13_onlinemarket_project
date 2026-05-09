@@ -53,10 +53,6 @@
               "userType": { "type": "string", "example": "seller" },
               "businessName": { "type": "string", "example": "Jane Store" },
               "phone": { "type": "string", "example": "+1 555 123 4567" },
-              "address": { "type": "string", "example": "123 Market St" },
-              "city": { "type": "string", "example": "Austin" },
-              "state": { "type": "string", "example": "TX" },
-              "zipCode": { "type": "string", "example": "73301" },
               "serviceArea": { "type": "string", "example": "Central Austin" }
             }
           }
@@ -71,10 +67,6 @@
           "userType": { "type": "string", "example": "buyer" },
           "businessName": { "type": "string", "nullable": true },
           "phone": { "type": "string", "nullable": true },
-          "address": { "type": "string", "nullable": true },
-          "city": { "type": "string", "nullable": true },
-          "state": { "type": "string", "nullable": true },
-          "zipCode": { "type": "string", "nullable": true },
           "serviceArea": { "type": "string", "nullable": true }
         }
       },
@@ -282,7 +274,7 @@
       },
       "OrderCreateRequest": {
         "type": "object",
-        "required": ["items"],
+        "required": ["items", "shippingAddress"],
         "properties": {
           "items": {
             "type": "array",
@@ -296,8 +288,7 @@
               }
             }
           },
-          "shippingAddress": { "type": "string", "example": "123 Market St" },
-          "deliveryAddress": { "type": "string", "example": "123 Market St" }
+          "shippingAddress": { "$ref": "#/components/schemas/BuyerAddressRequest" }
         }
       },
       "OrderCommentRequest": {
@@ -354,6 +345,39 @@
           "state": { "type": "string", "example": "Cairo Governorate" },
           "zipCode": { "type": "string", "example": "11511" },
           "accuracy": { "type": "number", "example": 15 }
+        }
+      },
+      "BuyerAddress": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string" },
+          "recipientName": { "type": "string", "example": "John Doe" },
+          "phone": { "type": "string", "example": "+1 555 123 4567" },
+          "street": { "type": "string", "example": "123 Main Street" },
+          "apartment": { "type": "string", "example": "Apt 4B" },
+          "city": { "type": "string", "example": "New York" },
+          "state": { "type": "string", "example": "NY" },
+          "zipCode": { "type": "string", "example": "10001" },
+          "landmark": { "type": "string", "example": "Near Central Park" },
+          "notes": { "type": "string", "example": "Ring the doorbell twice" },
+          "isDefault": { "type": "boolean", "example": false },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "BuyerAddressRequest": {
+        "type": "object",
+        "required": ["recipientName", "phone", "street", "city", "state", "zipCode"],
+        "properties": {
+          "recipientName": { "type": "string", "example": "John Doe" },
+          "phone": { "type": "string", "example": "+1 555 123 4567" },
+          "street": { "type": "string", "example": "123 Main Street" },
+          "apartment": { "type": "string", "example": "Apt 4B" },
+          "city": { "type": "string", "example": "New York" },
+          "state": { "type": "string", "example": "NY" },
+          "zipCode": { "type": "string", "example": "10001" },
+          "landmark": { "type": "string", "example": "Near Central Park" },
+          "notes": { "type": "string", "example": "Ring the doorbell twice" },
+          "isDefault": { "type": "boolean", "example": false }
         }
       },
       "DeliveryZone": {
@@ -942,13 +966,76 @@
         "tags": ["Sellers"],
         "summary": "Get seller profile",
         "security": [{ "bearerAuth": [] }],
-        "responses": { "200": { "description": "Seller profile" } }
+        "responses": {
+          "200": {
+            "description": "Seller profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "_id": { "type": "string" },
+                    "name": { "type": "string" },
+                    "email": { "type": "string" },
+                    "phone": { "type": "string", "nullable": true },
+                    "businessName": { "type": "string", "nullable": true },
+                    "serviceArea": { "type": "string", "nullable": true },
+                    "userType": { "type": "string", "example": "seller" },
+                    "rating": { "type": "number", "example": 0 },
+                    "sellerFlags": { "type": "integer", "example": 0 }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
       },
       "put": {
         "tags": ["Sellers"],
-        "summary": "Update seller profile",
+        "summary": "Update seller profile (phone and businessName)",
         "security": [{ "bearerAuth": [] }],
-        "responses": { "200": { "description": "Profile updated" } }
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phone": { "type": "string", "example": "+1 555 987 6543" },
+                  "businessName": { "type": "string", "example": "My Store" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Profile updated successfully" },
+                    "seller": {
+                      "type": "object",
+                      "properties": {
+                        "_id": { "type": "string" },
+                        "name": { "type": "string" },
+                        "email": { "type": "string" },
+                        "phone": { "type": "string" },
+                        "businessName": { "type": "string" },
+                        "userType": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
       }
     },
     "/sellers/items": {
@@ -956,21 +1043,220 @@
         "tags": ["Sellers"],
         "summary": "Get seller items",
         "security": [{ "bearerAuth": [] }],
-        "responses": { "200": { "description": "Seller items list" } }
+        "responses": {
+          "200": {
+            "description": "Seller items list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Product" }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
       }
     },
     "/buyers/profile": {
       "get": {
         "tags": ["Buyers"],
-        "summary": "Get buyer profile",
+        "summary": "Get buyer profile with detected location",
         "security": [{ "bearerAuth": [] }],
-        "responses": { "200": { "description": "Buyer profile" } }
+        "responses": {
+          "200": {
+            "description": "Buyer profile with detected location",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "_id": { "type": "string" },
+                    "name": { "type": "string" },
+                    "email": { "type": "string" },
+                    "phone": { "type": "string", "nullable": true },
+                    "userType": { "type": "string", "example": "buyer" },
+                    "addresses": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/BuyerAddress" }
+                    },
+                    "detectedLocation": {
+                      "type": "object",
+                      "properties": {
+                        "_id": { "type": "string" },
+                        "buyerId": { "type": "string" },
+                        "latitude": { "type": "number" },
+                        "longitude": { "type": "number" },
+                        "accuracy": { "type": "number" },
+                        "address": { "type": "string" },
+                        "city": { "type": "string" },
+                        "state": { "type": "string" },
+                        "zipCode": { "type": "string" }
+                      },
+                      "nullable": true
+                    },
+                    "buyerFlags": { "type": "integer", "example": 0 }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
       },
       "put": {
         "tags": ["Buyers"],
-        "summary": "Update buyer profile",
+        "summary": "Update buyer profile (phone only)",
         "security": [{ "bearerAuth": [] }],
-        "responses": { "200": { "description": "Profile updated" } }
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phone": { "type": "string", "example": "+1 555 987 6543" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Profile updated successfully" },
+                    "buyer": {
+                      "type": "object",
+                      "properties": {
+                        "_id": { "type": "string" },
+                        "name": { "type": "string" },
+                        "email": { "type": "string" },
+                        "phone": { "type": "string" },
+                        "userType": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/buyers/addresses": {
+      "get": {
+        "tags": ["Buyers"],
+        "summary": "Get all saved delivery addresses",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "List of saved addresses",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "addresses": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/BuyerAddress" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "post": {
+        "tags": ["Buyers"],
+        "summary": "Save new delivery address",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BuyerAddressRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Address saved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Address added successfully" },
+                    "address": { "$ref": "#/components/schemas/BuyerAddress" },
+                    "buyer": { "type": "object" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Validation error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/buyers/addresses/{addressId}": {
+      "put": {
+        "tags": ["Buyers"],
+        "summary": "Update saved delivery address",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "addressId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BuyerAddressRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Address updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Address updated successfully" },
+                    "buyer": { "type": "object" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Validation error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Address not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "delete": {
+        "tags": ["Buyers"],
+        "summary": "Delete saved delivery address",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "addressId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": {
+            "description": "Address deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Address deleted successfully" },
+                    "buyer": { "type": "object" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Address not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
       }
     },
     "/payments/pay": {

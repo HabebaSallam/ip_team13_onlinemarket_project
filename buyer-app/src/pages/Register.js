@@ -9,10 +9,6 @@ function Register({ setIsAuthenticated }) {
     email: '',
     password: '',
     phone: '',
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -69,26 +65,6 @@ function Register({ setIsAuthenticated }) {
           <div className="form-group">
             <label>Phone</label>
             <input type="tel" name="phone" value={formData.phone} onChange={handleChange} />
-          </div>
-          
-          <div className="form-group">
-            <label>Address</label>
-            <input type="text" name="address" value={formData.address} onChange={handleChange} />
-          </div>
-          
-          <div className="form-group">
-            <label>City</label>
-            <input type="text" name="city" value={formData.city} onChange={handleChange} />
-          </div>
-          
-          <div className="form-group">
-            <label>State</label>
-            <input type="text" name="state" value={formData.state} onChange={handleChange} />
-          </div>
-          
-          <div className="form-group">
-            <label>Zip Code</label>
-            <input type="text" name="zipCode" value={formData.zipCode} onChange={handleChange} />
           </div>
           
           <button type="submit" className="btn-primary" disabled={loading}>

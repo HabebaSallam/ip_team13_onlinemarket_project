@@ -15,7 +15,10 @@ function Profile() {
     try {
       const res = await sellerAPI.getProfile();
       setProfile(res.data);
-      setFormData(res.data);
+      setFormData({
+        businessName: res.data.businessName || '',
+        phone: res.data.phone || '',
+      });
     } catch (err) {
       showError(err.response?.data?.message || 'Error fetching profile');
     } finally {
