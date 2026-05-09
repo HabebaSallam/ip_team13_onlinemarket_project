@@ -18,10 +18,12 @@ import Checkout from './pages/Checkout';
 
 // Components
 import Navbar from './components/Navbar';
+import { LocationSetup } from './components/LocationSetup';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showLocationSetup, setShowLocationSetup] = useState(false);
   const [cart, setCart] = useState(() => {
     const saved = localStorage.getItem('cart');
     return saved ? JSON.parse(saved) : [];
@@ -34,6 +36,12 @@ function App() {
     }
     setLoading(false);
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      setShowLocationSetup(true);
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const syncCartFromServer = async () => {
@@ -72,29 +80,19 @@ function App() {
     setCart([]);
   };
 
-  const addToCart = async (item) => {
-    try {
-      const res = await cartAPI.addToCart(item._id, 1);
-      const serverCart = res.data.cart;
-      const normalizedCart = (serverCart?.items || []).map((cartItem) => ({
-        _id: cartItem.product?._id,
-        name: cartItem.product?.name,
-        price: cartItem.product?.price,
-        category: cartItem.product?.category,
-        images: cartItem.product?.images,
-        quantity: cartItem.quantity,
-      })).filter(cartItem => cartItem._id);
-      setCart(normalizedCart);
-    } catch (error) {
-      console.error('Failed to add item to cart:', error);
-      setCart(prev => {
-        const existing = prev.find(c => c._id === item._id);
-        if (existing) {
-          return prev.map(c => c._id === item._id ? { ...c, quantity: c.quantity + 1 } : c);
-        }
-        return [...prev, { ...item, quantity: 1 }];
-      });
-    }
+  const addToCart = async (item, serverCart = null) => {
+    if (!serverCart) return;
+
+    const normalizedCart = (serverCart.items || []).map((cartItem) => ({
+      _id: cartItem.product?._id,
+      name: cartItem.product?.name,
+      price: cartItem.product?.price,
+      category: cartItem.product?.category,
+      images: cartItem.product?.images,
+      quantity: cartItem.quantity,
+    })).filter(cartItem => cartItem._id);
+
+    setCart(normalizedCart);
   };
 
   const removeFromCart = async (itemId) => {
@@ -160,6 +158,12 @@ function App() {
   return (
     <ToastProvider>
       <Router>
+        {showLocationSetup && isAuthenticated && (
+          <LocationSetup
+            onLocationReady={() => setShowLocationSetup(false)}
+            onClose={() => setShowLocationSetup(false)}
+          />
+        )}
         {isAuthenticated && <Navbar cartCount={cart.length} onLogout={handleLogout} />}
         <Routes>
           {!isAuthenticated ? (

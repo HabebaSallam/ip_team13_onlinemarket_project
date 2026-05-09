@@ -78,5 +78,13 @@ export const buyersAPI = {
   updateProfile: (data) => api.put('/buyers/profile', data),
 };
 
+// Serviceability endpoints
+export const serviceabilityAPI = {
+  updateLocation: (data) => api.post('/serviceability/location', data),
+  getLocation: () => api.get('/serviceability/location'),
+  checkServiceability: (sellerId) => api.get(`/serviceability/check/${sellerId}`),
+  checkCartServiceability: (cartItems) => api.post('/serviceability/check-cart', { cartItems }),
+};
+
 export { api };
 export default api;

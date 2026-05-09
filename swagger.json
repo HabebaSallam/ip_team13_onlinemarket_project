@@ -342,6 +342,121 @@
           "reason": { "type": "string" },
           "description": { "type": "string" }
         }
+      },
+      "BuyerLocation": {
+        "type": "object",
+        "properties": {
+          "buyerId": { "type": "string" },
+          "latitude": { "type": "number", "example": 30.0444 },
+          "longitude": { "type": "number", "example": 31.2357 },
+          "address": { "type": "string", "example": "Downtown Cairo" },
+          "city": { "type": "string", "example": "Cairo" },
+          "state": { "type": "string", "example": "Cairo Governorate" },
+          "zipCode": { "type": "string", "example": "11511" },
+          "accuracy": { "type": "number", "example": 15 }
+        }
+      },
+      "DeliveryZone": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string" },
+          "sellerId": { "type": "string" },
+          "name": { "type": "string", "example": "Central Delivery Area" },
+          "latitude": { "type": "number", "example": 30.05 },
+          "longitude": { "type": "number", "example": 31.24 },
+          "radius": { "type": "number", "example": 5 },
+          "city": { "type": "string", "example": "Cairo" },
+          "state": { "type": "string", "example": "Cairo Governorate" },
+          "isActive": { "type": "boolean", "example": true },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "BuyerLocationRequest": {
+        "type": "object",
+        "required": ["latitude", "longitude"],
+        "properties": {
+          "latitude": { "type": "number", "example": 30.0444 },
+          "longitude": { "type": "number", "example": 31.2357 },
+          "address": { "type": "string", "example": "Downtown Cairo" },
+          "city": { "type": "string", "example": "Cairo" },
+          "state": { "type": "string", "example": "Cairo Governorate" },
+          "zipCode": { "type": "string", "example": "11511" },
+          "accuracy": { "type": "number", "example": 15 }
+        }
+      },
+      "DeliveryZoneRequest": {
+        "type": "object",
+        "required": ["name", "latitude", "longitude"],
+        "properties": {
+          "name": { "type": "string", "example": "Central Delivery Area" },
+          "latitude": { "type": "number", "example": 30.05 },
+          "longitude": { "type": "number", "example": 31.24 },
+          "radius": { "type": "number", "example": 5 },
+          "city": { "type": "string", "example": "Cairo" },
+          "state": { "type": "string", "example": "Cairo Governorate" },
+          "isActive": { "type": "boolean", "example": true }
+        }
+      },
+      "CheckCartRequest": {
+        "type": "object",
+        "required": ["cartItems"],
+        "properties": {
+          "cartItems": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["productId", "quantity"],
+              "properties": {
+                "productId": { "type": "string", "example": "66b0f9a1f4b1c2d3e4f5a6b7" },
+                "quantity": { "type": "integer", "example": 2 }
+              }
+            }
+          }
+        }
+      },
+      "ServiceabilityCheckResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "isServiceable": { "type": "boolean", "example": false },
+          "message": { "type": "string", "example": "Seller has no delivery zones set" },
+          "buyerLocation": { "$ref": "#/components/schemas/BuyerLocation" },
+          "nearestZone": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "example": "Central Delivery Area" },
+              "distance": { "type": "number", "example": 7.4 }
+            }
+          }
+        }
+      },
+      "CartServiceabilityResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "allServiceable": { "type": "boolean", "example": false },
+          "serviceabilityStatus": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "isServiceable": { "type": "boolean", "example": false },
+                "products": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "_id": { "type": "string" },
+                      "name": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "buyerLocation": { "$ref": "#/components/schemas/BuyerLocation" }
+        }
       }
     }
   },
@@ -640,12 +755,6 @@
         "security": [{ "bearerAuth": [] }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrderCreateRequest" } } } },
         "responses": { "201": { "description": "Order created" }, "400": { "description": "Validation error" }, "401": { "description": "Unauthorized" } }
-      },
-      "put": {
-        "tags": ["Orders"],
-        "summary": "Update order status",
-        "security": [{ "bearerAuth": [] }],
-        "responses": { "200": { "description": "Order updated" } }
       }
     },
     "/orders/buyer/my-orders": {
@@ -686,6 +795,23 @@
         "security": [{ "bearerAuth": [] }],
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Order cancelled" }, "400": { "description": "Can only cancel pending orders" }, "403": { "description": "Not authorized" }, "404": { "description": "Order not found" } }
+      }
+    },
+    "/orders/{id}/status": {
+      "put": {
+        "tags": ["Orders"],
+        "summary": "Update order status only",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrderStatusUpdateRequest" } } }
+        },
+        "responses": {
+          "200": { "description": "Order status updated" },
+          "404": { "description": "Order not found" },
+          "401": { "description": "Unauthorized" }
+        }
       }
     },
     "/orders/{id}/comments": {
@@ -854,6 +980,207 @@
         "security": [{ "bearerAuth": [] }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PaymentRequest" } } } },
         "responses": { "200": { "description": "Payment processed" }, "400": { "description": "Validation error" }, "404": { "description": "Order not found" } }
+      }
+    },
+    "/serviceability/location": {
+      "get": {
+        "tags": ["Serviceability"],
+        "summary": "Get current buyer location",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Buyer location returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "location": { "$ref": "#/components/schemas/BuyerLocation" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "post": {
+        "tags": ["Serviceability"],
+        "summary": "Save buyer location",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BuyerLocationRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Buyer location saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "location": { "$ref": "#/components/schemas/BuyerLocation" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Validation error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/serviceability/check/{sellerId}": {
+      "get": {
+        "tags": ["Serviceability"],
+        "summary": "Check whether a seller can deliver to the current buyer",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "sellerId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": {
+            "description": "Serviceability result",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ServiceabilityCheckResponse" }
+              }
+            }
+          },
+          "400": { "description": "Buyer location missing", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/serviceability/check-cart": {
+      "post": {
+        "tags": ["Serviceability"],
+        "summary": "Check whether the current cart is serviceable",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CheckCartRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Cart serviceability result",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CartServiceabilityResponse" }
+              }
+            }
+          },
+          "400": { "description": "Validation error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/serviceability/zones": {
+      "get": {
+        "tags": ["Serviceability"],
+        "summary": "Get the current seller delivery zones",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Zones list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "zones": { "type": "array", "items": { "$ref": "#/components/schemas/DeliveryZone" } }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "post": {
+        "tags": ["Serviceability"],
+        "summary": "Create a delivery zone",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeliveryZoneRequest" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "Zone created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "zone": { "$ref": "#/components/schemas/DeliveryZone" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Validation error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/serviceability/zones/{zoneId}": {
+      "put": {
+        "tags": ["Serviceability"],
+        "summary": "Update a delivery zone",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "zoneId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeliveryZoneRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Zone updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "zone": { "$ref": "#/components/schemas/DeliveryZone" }
+                  }
+                }
+              }
+            }
+          },
+          "403": { "description": "Not authorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Zone not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "delete": {
+        "tags": ["Serviceability"],
+        "summary": "Delete a delivery zone",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "zoneId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": {
+            "description": "Zone deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Zone deleted" }
+                  }
+                }
+              }
+            }
+          },
+          "403": { "description": "Not authorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Zone not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
       }
     }
   }

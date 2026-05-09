@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ordersAPI, api } from '../api';
+import { ordersAPI, api, serviceabilityAPI } from '../api';
 import { useToast } from '../context/ToastContext';
 import './Cart.css';
 
@@ -45,6 +45,15 @@ function Cart({ cart, removeFromCart, updateQuantity }) {
 
     setLoading(true);
     try {
+      const serviceabilityRes = await serviceabilityAPI.checkCartServiceability(
+        cart.map(item => ({ productId: item._id, quantity: item.quantity }))
+      );
+
+      if (!serviceabilityRes.data?.allServiceable) {
+        showError('One or more items in your cart are outside your delivery zone');
+        return;
+      }
+
       const items = cart.map(item => ({
         product: item._id,
         quantity: item.quantity,

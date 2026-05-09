@@ -1,15 +1,18 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { itemsAPI } from '../api';
+import { itemsAPI, cartAPI, serviceabilityAPI } from '../api';
 import { useToast } from '../context/ToastContext';
 import './Catalog.css';
 
-function CategoryPage({ addToCart }) {
+function CategoryPage({ addToCart: addToCartFromParent }) {
   const { categoryName } = useParams();
   const navigate = useNavigate();
   const { showError, showSuccess } = useToast();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [addingItemId, setAddingItemId] = useState(null);
+  const [sellerServiceability, setSellerServiceability] = useState({});
+  const [checkingServiceability, setCheckingServiceability] = useState({});
 
   const getSellerName = (item) => {
     if (!item?.sellerId) return 'Unknown seller';
@@ -17,6 +20,11 @@ function CategoryPage({ addToCart }) {
       return item.sellerId.businessName || item.sellerId.name || 'Unknown seller';
     }
     return 'Unknown seller';
+  };
+
+  const getSellerId = (item) => {
+    if (!item?.sellerId) return null;
+    return typeof item.sellerId === 'object' ? item.sellerId._id : item.sellerId;
   };
 
   const categoryLabel = decodeURIComponent(categoryName || '');
@@ -47,9 +55,92 @@ function CategoryPage({ addToCart }) {
     fetchCategoryItems();
   }, [fetchCategoryItems]);
 
-  const handleAddToCart = (item) => {
-    addToCart(item);
-    showSuccess('Item added to cart!');
+  useEffect(() => {
+    let cancelled = false;
+    const uniqueSellerIds = [...new Set(items.map(getSellerId).filter(Boolean))];
+
+    if (uniqueSellerIds.length === 0) {
+      setSellerServiceability({});
+      setCheckingServiceability({});
+      return () => {};
+    }
+
+    setCheckingServiceability((prev) => {
+      const next = { ...prev };
+      uniqueSellerIds.forEach((sellerId) => {
+        next[sellerId] = true;
+      });
+      return next;
+    });
+
+    Promise.allSettled(
+      uniqueSellerIds.map(async (sellerId) => {
+        const response = await serviceabilityAPI.checkServiceability(sellerId);
+        return {
+          sellerId,
+          isServiceable: response.data?.isServiceable !== false,
+        };
+      })
+    ).then((results) => {
+      if (cancelled) return;
+
+      setSellerServiceability((prev) => {
+        const next = { ...prev };
+        results.forEach((result) => {
+          if (result.status === 'fulfilled') {
+            next[result.value.sellerId] = result.value.isServiceable;
+          }
+        });
+        return next;
+      });
+
+      setCheckingServiceability((prev) => {
+        const next = { ...prev };
+        uniqueSellerIds.forEach((sellerId) => {
+          delete next[sellerId];
+        });
+        return next;
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [items]);
+
+  const isOutOfDeliveryZone = (item) => {
+    const sellerId = getSellerId(item);
+    if (!sellerId) return false;
+    return sellerServiceability[sellerId] === false;
+  };
+
+  const isCheckingDeliveryZone = (item) => {
+    const sellerId = getSellerId(item);
+    if (!sellerId) return false;
+    return Boolean(checkingServiceability[sellerId]);
+  };
+
+  const handleAddToCart = async (item) => {
+    setAddingItemId(item._id);
+    try {
+      if (isOutOfDeliveryZone(item)) {
+        showError('This item is outside your delivery zone');
+        return;
+      }
+
+      const response = await cartAPI.addToCart(item._id, 1);
+      showSuccess('Item added to cart!');
+      // Call parent addToCart to sync state if needed
+      if (addToCartFromParent) {
+        addToCartFromParent(item, response.data.cart);
+      }
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
+      showError(errorMessage);
+      console.error('Error adding to cart:', err);
+    } finally {
+      setAddingItemId(null);
+    }
   };
 
   if (loading) return <div className="loading">Loading...</div>;
@@ -103,10 +194,13 @@ function CategoryPage({ addToCart }) {
         <div className="product-grid category-results-grid">
           {items.map(item => {
             const outOfStock = Number(item.stock ?? 0) <= 0;
+            const outOfZone = isOutOfDeliveryZone(item);
+            const checkingZone = isCheckingDeliveryZone(item);
             return (
-            <div key={item._id} className={`product-card ${outOfStock ? 'out-of-stock' : ''}`}>
+            <div key={item._id} className={`product-card ${outOfStock ? 'out-of-stock' : ''} ${outOfZone ? 'out-of-zone' : ''}`}>
               {item.images?.[0] && <img src={item.images[0]} alt={item.name} className="product-image" />}
               {outOfStock && <div className="out-of-stock-badge">Out of stock</div>}
+              {outOfZone && <div className="out-of-zone-badge">Out of delivery zone</div>}
               <div className="product-info">
                 <div className="product-category">{item.category || 'Uncategorized'}</div>
                 <div className="product-name">{item.name}</div>
@@ -115,7 +209,7 @@ function CategoryPage({ addToCart }) {
                 <div className="product-delivery">Delivery: {item.deliveryTimeEstimate || 'TBD'} days</div>
                 <div className="product-actions">
                   <button className="btn-primary" onClick={() => navigate(`/product/${item._id}`)}>View</button>
-                  <button className="btn-secondary" onClick={() => handleAddToCart(item)} disabled={outOfStock} aria-disabled={outOfStock}>{outOfStock ? 'Out of stock' : 'Add to Cart'}</button>
+                  <button className="btn-secondary" onClick={() => handleAddToCart(item)} disabled={outOfStock || outOfZone || checkingZone || addingItemId === item._id} aria-disabled={outOfStock || outOfZone || checkingZone || addingItemId === item._id}>{addingItemId === item._id ? 'Adding...' : outOfStock ? 'Out of stock' : outOfZone ? 'Out of zone' : checkingZone ? 'Checking zone...' : 'Add to Cart'}</button>
                 </div>
               </div>
             </div>

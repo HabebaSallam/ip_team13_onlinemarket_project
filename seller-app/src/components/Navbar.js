@@ -20,6 +20,7 @@ function Navbar({ onLogout }) {
           <li><Link to="/">Dashboard</Link></li>
           <li><Link to="/items">Items</Link></li>
           <li><Link to="/orders">Orders</Link></li>
+          <li><Link to="/delivery-zones">Delivery Zones</Link></li>
           <li><Link to="/profile">Profile</Link></li>
           <li><button onClick={handleLogout} className="btn-logout">Logout</button></li>
         </ul>

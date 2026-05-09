@@ -56,4 +56,12 @@ export const flagsAPI = {
   getMyFlags: () => api.get('/flags/my-flags'),
 };
 
+// Serviceability endpoints
+export const serviceabilityAPI = {
+  getZones: () => api.get('/serviceability/zones'),
+  createZone: (data) => api.post('/serviceability/zones', data),
+  updateZone: (zoneId, data) => api.put(`/serviceability/zones/${zoneId}`, data),
+  deleteZone: (zoneId) => api.delete(`/serviceability/zones/${zoneId}`),
+};
+
 export default api;

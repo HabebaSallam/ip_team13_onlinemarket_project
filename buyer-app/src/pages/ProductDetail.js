@@ -1,16 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { itemsAPI, ratingsAPI, commentsAPI, flagsAPI } from '../api';
+import { itemsAPI, ratingsAPI, commentsAPI, flagsAPI, cartAPI, serviceabilityAPI } from '../api';
+import { useToast } from '../context/ToastContext';
 import './ProductDetail.css';
 
-function ProductDetail({ addToCart }) {
+function ProductDetail({ addToCart: addToCartFromParent }) {
   const { id } = useParams();
+  const { showError, showSuccess } = useToast();
   const [item, setItem] = useState(null);
   const [ratings, setRatings] = useState([]);
   const [comments, setComments] = useState([]);
   const [summary, setSummary] = useState('');
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [sellerServiceable, setSellerServiceable] = useState(null);
+  const [checkingServiceability, setCheckingServiceability] = useState(false);
   const [showRatingForm, setShowRatingForm] = useState(false);
   const [showCommentForm, setShowCommentForm] = useState(false);
   const [showFlagForm, setShowFlagForm] = useState(false);
@@ -39,6 +44,27 @@ function ProductDetail({ addToCart }) {
   useEffect(() => {
     fetchProductData();
   }, [fetchProductData]);
+
+  useEffect(() => {
+    const checkServiceability = async () => {
+      const sellerId = typeof item?.sellerId === 'object' ? item.sellerId?._id : item?.sellerId;
+      if (!sellerId) return;
+
+      setCheckingServiceability(true);
+      try {
+        const res = await serviceabilityAPI.checkServiceability(sellerId);
+        setSellerServiceable(res.data?.isServiceable !== false);
+      } catch (err) {
+        setSellerServiceable(null);
+      } finally {
+        setCheckingServiceability(false);
+      }
+    };
+
+    if (item) {
+      checkServiceability();
+    }
+  }, [item]);
 
   const handleGenerateSummary = async () => {
     setSummaryLoading(true);
@@ -125,6 +151,29 @@ function ProductDetail({ addToCart }) {
     }
   };
 
+  const handleAddToCart = async () => {
+    setAddingToCart(true);
+    try {
+      if (sellerServiceable === false) {
+        showError('This item is outside your delivery zone');
+        return;
+      }
+
+      const response = await cartAPI.addToCart(item._id, 1);
+      showSuccess('Item added to cart');
+      // Call parent addToCart to sync state if needed
+      if (addToCartFromParent) {
+        addToCartFromParent(item, response.data.cart);
+      }
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
+      showError(errorMessage);
+      console.error('Error adding to cart:', err);
+    } finally {
+      setAddingToCart(false);
+    }
+  };
+
   if (loading) return <div className="loading">Loading...</div>;
   if (!item) return <div className="container">Product not found</div>;
 
@@ -142,6 +191,8 @@ function ProductDetail({ addToCart }) {
         <div className="product-details-section">
           <h2>{item.name}</h2>
           <p className="seller-name">Sold by: <strong>{getSellerName()}</strong></p>
+          {sellerServiceable === false && <div className="out-of-zone-badge-inline">Out of delivery zone</div>}
+          {checkingServiceability && <div className="out-of-zone-badge-inline checking">Checking delivery zone...</div>}
           <p className="price">${Number(item.price || 0).toFixed(2)}</p>
           <p className="rating">{getRatingText()}</p>
           <p className="description">{item.description}</p>
@@ -149,7 +200,9 @@ function ProductDetail({ addToCart }) {
           <p className="stock">{outOfStock ? <span className="out-of-stock-inline">Out of stock</span> : `Stock Available: ${item.stock}`}</p>
           
           <div className="actions">
-            <button className="btn-primary btn-large" onClick={() => addToCart(item)} disabled={outOfStock} aria-disabled={outOfStock}>{outOfStock ? 'Out of stock' : 'Add to Cart'}</button>
+            <button className="btn-primary btn-large" onClick={handleAddToCart} disabled={outOfStock || addingToCart || sellerServiceable === false || checkingServiceability} aria-disabled={outOfStock || addingToCart || sellerServiceable === false || checkingServiceability}>
+              {addingToCart ? 'Adding...' : outOfStock ? 'Out of stock' : sellerServiceable === false ? 'Out of zone' : checkingServiceability ? 'Checking zone...' : 'Add to Cart'}
+            </button>
             <button className="btn-secondary" onClick={() => setShowRatingForm(!showRatingForm)}>
               {showRatingForm ? 'Hide Rating Form' : 'Rate'}
             </button>

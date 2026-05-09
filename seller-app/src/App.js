@@ -12,6 +12,7 @@ import Orders from './pages/Orders';
 import Profile from './pages/Profile';
 import ItemDetail from './pages/ItemDetail';
 import OrderDetail from './pages/OrderDetail';
+import DeliveryZones from './pages/DeliveryZones';
 
 // Components
 import Navbar from './components/Navbar';
@@ -57,6 +58,7 @@ function App() {
               <Route path="/items/:id" element={<ItemDetail />} />
               <Route path="/orders" element={<Orders />} />
               <Route path="/orders/:id" element={<OrderDetail />} />
+              <Route path="/delivery-zones" element={<DeliveryZones />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="*" element={<Navigate to="/" />} />
             </>
