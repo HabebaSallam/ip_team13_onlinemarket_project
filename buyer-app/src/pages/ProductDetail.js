@@ -165,6 +165,7 @@ function ProductDetail({ addToCart: addToCartFromParent }) {
       if (addToCartFromParent) {
         addToCartFromParent(item, response.data.cart);
       }
+      showSuccess('Item added to cart');
     } catch (err) {
       const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
       showError(errorMessage);
