@@ -1,355 +1,335 @@
-# Online Marketplace — Full Stack
-+
-+
-+An open, modular e-commerce marketplace with separate buyer and seller frontends and a shared Node/Express + MongoDB backend. This README highlights how to run the project locally, the core structure, and quick pointers for development.
-+
-+## Table of Contents
-+
-+- [Features](#features)
-+- [Tech stack](#tech-stack)
-+- [Quick start](#quick-start)
-+- [Environment variables](#environment-variables)
-+- [Project structure](#project-structure)
-+- [Developer notes](#developer-notes)
-+- [Contributing](#contributing)
-+- [License](#license)
-+
-+## Features
-+
-+- Buyer-facing React app with catalog, product pages, cart, and checkout
-+- Seller-facing React dashboard for inventory, orders, and stock management
-+- REST API built with Node.js + Express and MongoDB models
-+- Orders preserved as single documents and presented to sellers scoped to their own items
-+
-+## Tech stack
-+
-+- Frontend: React (create-react-app)
-+- Backend: Node.js + Express
-+- Database: MongoDB / Mongoose
-+- Deployment: static builds for frontends, Express server for API
-+
-+## Quick start
-+
-+Requirements: Node.js (16+), npm, and a running MongoDB instance.
-+
-+1. Install root dependencies (backend):
-+
-+```bash
-+# from repository root
-+npm install
-+```
-+
-+2. Configure environment variables (create `.env` in the project root). Example variables:
-+
-+```env
-+PORT=5000
-+MONGODB_URI=mongodb://localhost:27017/marketplace
-+JWT_SECRET=your_jwt_secret
-+GROK_API_KEY=YOUR_OPTIONAL_GROK_KEY
-+```
-+
-+3. Start the API server (from repo root):
-+
-+```bash
-+# development run (no watcher)
-+node server.js
-+
-+# or with nodemon for auto-reload (recommended during dev)
-+npx nodemon server.js
-+```
-+
-+4. Run the Buyer app (in a separate terminal):
-+
-+```bash
-+cd buyer-app
-+npm install
-+npm start
-+```
-+
-+5. Run the Seller app (in a separate terminal):
-+
-+```bash
-+cd seller-app
-+npm install
-+npm start
-+```
-+
-+Building production bundles:
-+
-+```bash
-+cd buyer-app && npm run build
-+cd seller-app && npm run build
-+```
-+
-+By default frontends point to `http://localhost:5000/api`. You can override with the `REACT_APP_API_URL` environment variable when starting the frontend.
-+
-+## Environment variables
-+
-+- `PORT` — API server port (default 5000)
-+- `MONGODB_URI` — MongoDB connection string
-+- `JWT_SECRET` — secret used for signing auth tokens
-+- `GROK_API_KEY` — optional AI summarization key used by the comments summary feature
-+
-+## Project structure
-+
-+Top-level layout (important folders):
-+
-+- `server.js` — Express app entry (API)
-+- `controllers/`, `models/`, `routes/`, `middleware/` — backend implementation
-+- `buyer-app/` — React buyer SPA (catalog, cart, checkout, profile)
-+- `seller-app/` — React seller SPA (items, orders, dashboard)
-+
-+## Developer notes
-+
-+- Orders are stored as single `Order` documents containing an `items` array. The API and frontends present seller-scoped views so each seller only sees their items and subtotal for a multi-seller order.
-+- To mark an item out-of-stock in the buyer UI, the product `stock` field is used; buyer product cards and product detail pages show an "Out of stock" badge and disable Add-to-Cart when `stock <= 0`.
-+- Sellers can edit item `stock` from the seller dashboard — the seller app calls the existing `itemsAPI.update(id, { stock })` endpoint and refreshes the item list.
-+
-+## Contributing
-+
-+- Feel free to open issues or pull requests. Keep changes focused, add tests where relevant, and run builds for the app you changed.
-+
-+## License
-+
-+This repository does not include a license file — add one if you plan to make the project public.
-+
-+---
-+
-+If you'd like I can also add a short `SETUP.md` with step-by-step screenshots or wire up CI build scripts (GitHub Actions) to build both frontends automatically on push.
-+
-+
-+
-+
-+
-+
-+
-+
-+
-+
-+
-+
-+
-+
-+
-+
-+
-+
-+
-+
-+
-+
-+
-+
-+
+# Online Marketplace Project
 
-## 🚀 Quick Start
+![GitHub repo size](https://img.shields.io/github/repo-size/HabebaSallam/ip_team13_onlinemarket_project)
+![GitHub last commit](https://img.shields.io/github/last-commit/HabebaSallam/ip_team13_onlinemarket_project)
+![Node](https://img.shields.io/badge/Node.js-18+-green)
+![React](https://img.shields.io/badge/React-18-blue)
+![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose-brightgreen)
+
+A full-stack online marketplace with separate buyer and seller applications, a shared Express API, and MongoDB for persistence.
+
+## At a Glance
+
+| Area | What it does |
+|---|---|
+| Buyer app | Browse products, manage cart, place and cancel orders, comment, rate, and manage addresses |
+| Seller app | Manage items, stock, delivery zones, and order status |
+| Backend API | Handles auth, products, categories, orders, cart, comments, reviews, flags, payments, and serviceability |
+| Database | MongoDB models with ObjectId references and populated relationships |
+
+## Project Layout
+
+```text
+ip_team13_onlinemarket_project/
+├─ server.js
+├─ controllers/
+├─ models/
+├─ routes/
+├─ middleware/
+├─ services/
+├─ buyer-app/
+├─ seller-app/
+├─ swagger.json
+├─ README.md
+└─ supporting docs
+```
+
+## Key Features
+
+### Buyer Experience
+
+- Register and log in
+- Browse the catalog with search and filters
+- View product details, reviews, and comments
+- Add items to cart and place orders
+- Cancel pending orders
+- View order history and order detail pages
+- Manage saved addresses and profile data
+- Check delivery serviceability
+
+### Seller Experience
+
+- Register and log in
+- Manage inventory and stock
+- Create and edit items
+- Assign or create categories
+- Track orders and update status
+- Manage delivery zones on the map
+- View seller profile and received orders
+
+### Backend Capabilities
+
+- JWT authentication and role protection
+- MongoDB schemas for users, products, categories, orders, carts, reviews, comments, flags, and delivery zones
+- Product-category relationship through `ObjectId` references
+- Order cancellation flow with ownership checks
+- Swagger documentation for the API
+- Serviceability checks for buyer and seller delivery zones
+
+## Architecture
+
+```mermaid
+flowchart LR
+  Buyer[Buyer App] --> API[Express API]
+  Seller[Seller App] --> API
+  API --> Mongo[(MongoDB)]
+  API --> Docs[Swagger Docs]
+  API --> Service[Serviceability & Zones]
+```
+
+## Setup
 
 ### Prerequisites
-- Node.js (v14+)
-- MongoDB (local or MongoDB Atlas)
-- npm or yarn
 
-### 1. Setup Backend
+- Node.js 16 or newer
+- npm
+- MongoDB running locally or a MongoDB Atlas connection string
+
+### 1. Clone the repository
 
 ```bash
-cd backend
+git clone <repo-url>
+cd ip_team13_onlinemarket_project
+```
+
+### 2. Configure the backend
+
+Create a `.env` file in the project root.
+
+```env
+PORT=5000
+MONGODB_URI=mongodb://localhost:27017/online_market
+JWT_SECRET=your_jwt_secret
+GROK_API_KEY=your_optional_grok_key
+```
+
+### 3. Install backend dependencies
+
+```bash
 npm install
-cp .env.example .env
-# Edit .env and add your MongoDB URI and other config
+```
+
+### 4. Start the backend
+
+```bash
 npm run dev
 ```
 
-The backend will run on `http://localhost:5000`
-
-### 2. Setup Seller App
+Or use:
 
 ```bash
-cd seller-app
-npm install
-cp .env.example .env
 npm start
 ```
 
-Seller app runs on `http://localhost:3000` (or next available port)
-
-### 3. Setup Buyer App
+### 5. Start the buyer app
 
 ```bash
 cd buyer-app
 npm install
-cp .env.example .env
 npm start
 ```
 
-Buyer app runs on `http://localhost:3001` (or next available port)
+### 6. Start the seller app
 
-## 📋 Features Implemented
-
-### Seller App Features
-✅ Account creation and login  
-✅ List items with categories  
-✅ Manage inventory (add, edit, delete items)  
-✅ Set delivery time estimates  
-✅ View and manage received orders  
-✅ Update order status (pending → confirmed → shipped → delivered)  
-✅ Communicate with buyers via order comments  
-✅ View buyer flags/complaints  
-✅ Profile management  
-
-### Buyer App Features
-✅ Account creation and login  
-✅ Browse product catalog  
-✅ Search products by name  
-✅ Filter by category and price  
-✅ View product details  
-✅ Rate and review products  
-✅ AI-powered comment summary on products  
-✅ Shopping cart functionality  
-✅ Place orders  
-✅ Track order status  
-✅ Communicate with sellers via order messages  
-✅ Flag sellers for issues (delays, damage, etc.)  
-✅ View order history  
-✅ Profile management  
-
-### Backend API Endpoints
-
-#### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - User login
-
-#### Sellers
-- `GET /api/sellers/profile` - Get seller profile
-- `PUT /api/sellers/profile` - Update seller profile
-- `GET /api/sellers/items` - Get seller's items
-
-#### Buyers
-- `GET /api/buyers/profile` - Get buyer profile
-- `PUT /api/buyers/profile` - Update buyer profile
-
-#### Items
-- `GET /api/items` - Get all items with filters
-- `GET /api/items/:id` - Get item details
-- `POST /api/items` - Create new item (seller only)
-- `PUT /api/items/:id` - Update item (seller only)
-- `DELETE /api/items/:id` - Delete item (seller only)
-- `GET /api/items/categories/all` - Get all categories
-
-#### Orders
-- `POST /api/orders` - Create order (buyer only)
-- `GET /api/orders/buyer/my-orders` - Get buyer's orders
-- `GET /api/orders/seller/my-orders` - Get seller's orders
-- `GET /api/orders/:id` - Get order details
-- `PUT /api/orders/:id/status` - Update order status (seller only)
-- `POST /api/orders/:id/comments` - Add comment to order
-
-#### Ratings
-- `POST /api/ratings` - Create rating/review (buyer only)
-- `GET /api/ratings/item/:itemId` - Get ratings for item
-
-#### Comments
-- `POST /api/comments` - Add comment to product (buyer only)
-- `GET /api/comments/item/:itemId` - Get comments for item
-- `GET /api/comments/item/:itemId/summary` - Get AI summary of comments
-
-#### Flags
-- `POST /api/flags` - Flag a user (buyer or seller)
-- `GET /api/flags/my-flags` - Get flags against current user
-
-## 🔧 Configuration
-
-### Backend (.env)
-```
-MONGODB_URI=mongodb://localhost:27017/marketplace
-JWT_SECRET=your_jwt_secret_key_here
-PORT=5000
-NODE_ENV=development
-OPENAI_API_KEY=your_openai_api_key_here
+```bash
+cd seller-app
+npm install
+npm start
 ```
 
-### Frontend (.env)
-```
-REACT_APP_API_URL=http://localhost:5000/api
-```
+## Scripts
 
-## 📦 Database Models
+### Backend
+
+- `npm start` - start the server
+- `npm run dev` - start the server with nodemon
+- `npm run migrate:product-categories` - migrate legacy product categories to `ObjectId` references
+
+### Buyer App
+
+- `npm start` - start the buyer UI
+- `npm run build` - build the production bundle
+- `npm test` - run React tests
+
+### Seller App
+
+- `npm start` - start the seller UI
+- `npm run build` - build the production bundle
+- `npm test` - run React tests
+
+## Environment Variables
+
+### Backend
+
+- `PORT` - backend port, default `5000`
+- `MONGODB_URI` - MongoDB connection string
+- `JWT_SECRET` - JWT signing secret
+- `GROK_API_KEY` - optional key used for AI comment summaries
+
+### Frontend
+
+- `REACT_APP_API_URL` - API base URL, usually `http://localhost:5000/api`
+
+## API Overview
+
+All endpoints live under `/api`.
+
+### Authentication
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+
+### Products and Items
+
+- `GET /api/products`
+- `GET /api/products/:id`
+- `POST /api/products`
+- `PUT /api/products/:id`
+- `PUT /api/products/:id/stock`
+- `DELETE /api/products/:id`
+- `GET /api/products/:id/reviews`
+- `POST /api/products/:id/reviews`
+- `DELETE /api/products/reviews/:id`
+- `GET /api/items`
+- `GET /api/items/categories/all`
+- `GET /api/items/:id`
+- `POST /api/items`
+- `PUT /api/items/:id`
+- `DELETE /api/items/:id`
+
+### Categories
+
+- `GET /api/categories`
+- `GET /api/categories/:id`
+- `POST /api/categories`
+- `PUT /api/categories/:id`
+- `DELETE /api/categories/:id`
+
+### Cart
+
+- `GET /api/cart`
+- `POST /api/cart/add`
+- `POST /api/cart/remove`
+- `POST /api/cart/update`
+- `DELETE /api/cart/clear`
+
+### Orders
+
+- `POST /api/orders`
+- `GET /api/orders`
+- `GET /api/orders/buyer/my-orders`
+- `GET /api/orders/seller/my-orders`
+- `GET /api/orders/:id`
+- `POST /api/orders/:id/comments`
+- `PUT /api/orders/:id`
+- `PUT /api/orders/:id/status`
+- `DELETE /api/orders/:id`
+
+### Buyers and Sellers
+
+- `GET /api/buyers/profile`
+- `PUT /api/buyers/profile`
+- `GET /api/buyers/addresses`
+- `POST /api/buyers/addresses`
+- `PUT /api/buyers/addresses/:addressId`
+- `DELETE /api/buyers/addresses/:addressId`
+- `GET /api/sellers/profile`
+- `PUT /api/sellers/profile`
+- `GET /api/sellers/items`
+
+### Comments, Flags, Payments, and Serviceability
+
+- `GET /api/comments/item/:id`
+- `GET /api/comments/item/:id/summary`
+- `POST /api/comments`
+- `POST /api/flags`
+- `POST /api/flags/orders/:orderId`
+- `GET /api/flags/my-flags`
+- `POST /api/payments/pay`
+- `POST /api/serviceability/location`
+- `GET /api/serviceability/location`
+- `GET /api/serviceability/check/:sellerId`
+- `POST /api/serviceability/check-cart`
+- `GET /api/serviceability/zones`
+- `POST /api/serviceability/zones`
+- `PUT /api/serviceability/zones/:zoneId`
+- `DELETE /api/serviceability/zones/:zoneId`
+
+### Docs
+
+- Swagger UI: `/api-docs`
+- Swagger JSON: `/api-docs.json`
+
+## Data Model Summary
 
 ### User
-- name, email, password
-- userType (seller/buyer)
-- phone, address, city, state, zipCode
-- Business details (for sellers)
-- Service area (optional for sellers)
-- Rating and flags tracking
 
-### Item
-- sellerId, name, description
-- category, price, stock
-- images, deliveryTimeEstimate
-- rating (average and count)
+Holds buyer and seller accounts with authentication data, contact details, business info, and addresses.
+
+### Category
+
+Stores category names and descriptions.
+
+### Product
+
+Stores product details and links each product to a seller and a category using `ObjectId` references.
 
 ### Order
-- buyerId, sellerId
-- items (array of item references)
-- totalPrice, status
-- deliveryAddress, estimatedDeliveryDate
-- comments (buyer-seller communication)
 
-### Rating
-- itemId, buyerId, sellerId
-- rating (1-5), review
-- orderId reference
+Stores the full order as one document, including buyer, items, totals, status, shipping data, and comments.
 
-### Flag
-- flaggedByUserId, flaggedUserId
-- reason, description
-- resolved status
+### Cart
 
-### Comment
-- itemId, buyerId
-- text, createdAt
-- AI-summarizable content
+Stores buyer cart items.
 
-## 🤖 AI Integration
+### Review, Comment, Flag, BuyerLocation, DeliveryZone
 
-The system includes AI-powered comment summarization using OpenAI's GPT API:
+Support ratings, communication, moderation, and serviceability features.
 
-- Buyers can add comments on products
-- System automatically generates summaries of all comments for each product
-- Sellers can view customer sentiment at a glance
+## Important Notes
 
-**To enable AI features:**
-1. Get an OpenAI API key from https://platform.openai.com
-2. Add it to your backend `.env` file
+- `Product.category` uses a `Category` reference, not a plain string.
+- Legacy category data was migrated with a one-time script.
+- Order cancellation is only allowed for the buyer who owns the order and only while the order is still `pending`.
+- Frontends should render populated objects safely, especially `category.name` and seller references.
+- Both apps point to the backend through `REACT_APP_API_URL`.
 
-## 🔐 Authentication
+## Troubleshooting
 
-- JWT-based authentication
-- Tokens stored in localStorage
-- Protected routes based on user type (buyer/seller)
-- Token included in all API requests via Authorization header
+### Backend does not start
 
-## 🎯 Future Enhancements
+- Check MongoDB is running.
+- Confirm `.env` exists and `MONGODB_URI` is correct.
+- Make sure port `5000` is free.
 
-- Payment gateway integration (Stripe, PayPal)
-- Email notifications
-- Real-time notifications with Socket.io
-- Advanced seller service area geolocation
-- Seller serviceability maps
-- Advanced search with Elasticsearch
-- Order tracking with maps
-- Wishlist/favorites functionality
-- Product recommendations using ML
-- Admin dashboard for moderation
-- Analytics and insights for sellers
+### Frontend opens on another port
 
-## 📞 Support
+- React uses the next available port when the default one is busy.
+- Use the port shown in the terminal.
 
-For issues or questions, please refer to the individual app READMEs or check the code comments.
+### Category appears as an object in the UI
 
-## 📄 License
+- Use `category.name` instead of rendering the whole object.
 
-This project is open source and available under the MIT License.
-#   i p _ t e a m 1 3 _ o n l i n e m a r k e t _ p r o j e c t 
- 
- 
+### `.trim()` errors on category
+
+- That means the code expects a string but the API returned a populated object.
+- Handle both object and string forms.
+
+## Related Docs
+
+- `PROJECT_SUMMARY.md`
+- `SETUP.md`
+- `QUICK_START_MAP.md`
+- `MAP_FEATURE_GUIDE.md`
+- `SERVICEABILITY_FEATURE.md`
+- `SERVICEABILITY_API_REFERENCE.md`
+
+## License
+
+No license file is currently included.
+
+---
+
+Built for a buyer-seller marketplace workflow with a shared backend, separate frontends, and delivery-zone aware ordering.
