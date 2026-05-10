@@ -89,7 +89,8 @@
         "type": "object",
         "properties": {
           "_id": { "type": "string" },
-          "name": { "type": "string", "example": "Electronics" }
+          "name": { "type": "string", "example": "Electronics" },
+          "products": { "type": "array", "items": { "$ref": "#/components/schemas/Item" } }
         }
       },
       "CategoryCreateRequest": {
@@ -616,11 +617,11 @@
     "/items/categories/all": {
       "get": {
         "tags": ["Items"],
-        "summary": "List item categories",
+        "summary": "List all categories with products",
         "responses": {
           "200": {
-            "description": "Distinct categories",
-            "content": { "application/json": { "schema": { "type": "array", "items": { "type": "string" } } } }
+            "description": "Categories with products populated",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Category" } } } }
           }
         }
       }
