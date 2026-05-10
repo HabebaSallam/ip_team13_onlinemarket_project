@@ -54,4 +54,35 @@ const productSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Post-save hook to sync product with category
+productSchema.post('save', async function (doc) {
+  try {
+    const Category = mongoose.model('Category');
+    // Add product to category if not already there
+    await Category.findByIdAndUpdate(
+      doc.category,
+      { $addToSet: { products: doc._id } },
+      { new: true }
+    );
+  } catch (error) {
+    console.error('Error syncing product to category:', error.message);
+  }
+});
+
+// Post hook for findByIdAndUpdate
+productSchema.post('findByIdAndUpdate', async function (doc) {
+  try {
+    if (doc && doc.category) {
+      const Category = mongoose.model('Category');
+      await Category.findByIdAndUpdate(
+        doc.category,
+        { $addToSet: { products: doc._id } },
+        { new: true }
+      );
+    }
+  } catch (error) {
+    console.error('Error syncing updated product to category:', error.message);
+  }
+});
+
 module.exports = mongoose.model('Product', productSchema);

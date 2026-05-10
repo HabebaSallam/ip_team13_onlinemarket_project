@@ -48,10 +48,12 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Get all categories
+// Get all categories with products
 router.get('/categories/all', async (req, res) => {
   try {
-    const categories = await Category.find().sort({ name: 1 });
+    const categories = await Category.find()
+      .populate('products')
+      .sort({ name: 1 });
     res.json(categories);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching categories', error: error.message });

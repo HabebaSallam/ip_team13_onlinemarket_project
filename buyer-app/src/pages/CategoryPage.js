@@ -203,7 +203,7 @@ function CategoryPage({ addToCart: addToCartFromParent }) {
               {outOfStock && <div className="out-of-stock-badge">Out of stock</div>}
               {outOfZone && <div className="out-of-zone-badge">Out of delivery zone</div>}
               <div className="product-info">
-                <div className="product-category">{item.category || 'Uncategorized'}</div>
+                <div className="product-category">{item.category?.name || item.category || 'Uncategorized'}</div>
                 <div className="product-name">{item.name}</div>
                 <div className="product-seller">{getSellerName(item)}</div>
                 <div className="product-price">${Number(item.price || 0).toFixed(2)}</div>

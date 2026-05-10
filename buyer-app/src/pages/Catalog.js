@@ -221,8 +221,14 @@ function Catalog({ addToCart: addToCartFromParent }) {
           >
             <span className="category-chip-label">{cat}</span>
             <span className="category-chip-count">
-              {items.filter((item) => (item.category || 'Uncategorized') === cat).length} item
-              {items.filter((item) => (item.category || 'Uncategorized') === cat).length === 1 ? '' : 's'}
+              {items.filter((item) => {
+                const itemCat = item.category?.name || item.category || 'Uncategorized';
+                return itemCat === cat;
+              }).length} item
+              {items.filter((item) => {
+                const itemCat = item.category?.name || item.category || 'Uncategorized';
+                return itemCat === cat;
+              }).length === 1 ? '' : 's'}
             </span>
           </button>
         ))}
@@ -279,7 +285,7 @@ function Catalog({ addToCart: addToCartFromParent }) {
                   {outOfStock && <div className="out-of-stock-badge">Out of stock</div>}
                   {outOfZone && <div className="out-of-zone-badge">Out of delivery zone</div>}
                   <div className="product-info">
-                    <div className="product-category">{item.category || 'Uncategorized'}</div>
+                    <div className="product-category">{item.category?.name || item.category || 'Uncategorized'}</div>
                     <div className="product-name">{item.name}</div>
                     <div className="product-seller">{getSellerName(item)}</div>
                     <div className="product-price">${Number(item.price || 0).toFixed(2)}</div>

@@ -145,7 +145,7 @@ function Items() {
   };
 
   const groupedItems = items.reduce((groups, item) => {
-    const category = item.category?.trim() || 'Uncategorized';
+    const category = (item.category?.name || item.category || 'Uncategorized').trim?.() || 'Uncategorized';
     if (!groups[category]) {
       groups[category] = [];
     }
@@ -312,7 +312,7 @@ function Items() {
                   <div key={item._id} className="item-card">
                     {item.images?.[0] && <img src={item.images[0]} alt={item.name} />}
                     <h3>{item.name}</h3>
-                    <p className="category">{item.category}</p>
+                    <p className="category">{item.category?.name || item.category || 'Uncategorized'}</p>
                     <p className="price">${Number(item.price || 0).toFixed(2)}</p>
                     <p className="stock">Stock: {item.stock}</p>
                     <p className="delivery">Delivery: {item.deliveryTimeEstimate} days</p>
